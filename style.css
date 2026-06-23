@@ -71,3 +71,18 @@ ol.refs li{margin:6px 0}
 .about h2{margin-top:0}
 footer{padding:30px 0 64px; color:var(--muted); font-size:.86rem}
 @media(max-width:640px){ .hero h1{font-size:1.6rem} body{font-size:16px} th,td{font-size:.82rem} }
+
+/* ---- print / PDF ---- */
+.pdf-bar a{font-weight:600}
+@media print{
+  nav.toc{display:none}
+  .badges,.pdf-bar{display:none}
+  header.hero{padding:0 0 16px; background:none}
+  a{color:#1a1d23}
+  body{font-size:10.5pt; line-height:1.5}
+  section{padding:16px 0}
+  tr,.card,.frow,pre.prompt,.callout-box{break-inside:avoid}
+  h2,h3,h4{break-after:avoid}
+  .shot{width:96px}
+  thead th{position:static}
+}
