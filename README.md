@@ -1,15 +1,15 @@
-# Can a language model build a working game from one sentence?
+# Generating Sudoku with 60 language models
 
-An **independent, reproducible benchmark**: 60 large language models across 8 vendors, each given the *same* one-line prompt — `create a sudoku game with jazz music.` — and asked to generate a complete, playable **Sudoku** game. Every game was then machine-tested in a real browser for whether it actually **renders**, encodes a **valid puzzle**, and can be **played to a recognized win**.
+An **independent, reproducible generation study**: 60 LLMs across 8 vendors received one identical prompt — `create a sudoku game with jazz music.` — and each output was rendered, validated, **played to a win** in a real browser, and **published here**.
 
 **▶ Read the study:** https://anselmotalotta.github.io/sudoku-llm-study/
 
-- **60** models · **8** vendors · **41** delivered a working game · **23** were correct *and* cleanly rendered.
-- Every generated game is published in [`/games/`](games/) and is playable in your browser (jazz soundtrack included).
-- Screenshots of every evaluated game are in [`/assets/`](assets/).
+- 60 models · 8 vendors · 41 delivered · 23 correct **and** cleanly rendered.
+- Every generated game is in [`/games/`](games/) (playable), every screenshot in [`/assets/`](assets/), the per-model data in [`/data/`](data/).
+- The **exact prompt** sent to every model — the end-user sentence *and* the full system instruction — is disclosed in Appendix B of the study.
 
-Games were created with **[PlayPrompt](https://playprompt.org)** — an agentic AI platform that turns a single prompt into a complete, ready-to-play browser game, generating the gameplay, the music, and (when needed) the visual assets. In this study only the underlying text model was swapped.
+**Conflict of interest, stated up front:** this study is produced by **[PlayPrompt](https://playprompt.org)**, which sells an AI game-generation platform. PlayPrompt has no model of its own in the comparison (it orchestrates third-party models), its own production-default model was among the weakest here, and all artifacts are published so anyone can re-run or re-score. See the study's Disclosure and Threats-to-Validity sections.
 
 ---
 
-*Single prompt, single run per model, 2026-06-23. Independent benchmark for informational purposes; not affiliated with, sponsored by, or endorsed by any model vendor. All product and model names are trademarks of their respective owners and are used solely to identify the models tested. Costs are estimates from published list prices. Results may not reproduce exactly due to model non-determinism.*
+*v1.0 · run date 2026-06-23 · single prompt, single run per model. Independent, point-in-time study; not affiliated with, sponsored by, or endorsed by any model vendor. All product/model names are trademarks of their owners, used nominatively. Costs are estimates from published list prices. Results may not reproduce exactly due to model non-determinism.*

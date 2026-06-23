@@ -1,0 +1,61 @@
+vendor,model,stage1,verdict,gen_seconds,game
+Anthropic,claude-fable-5,did not deliver,not_delivered,1,
+Anthropic,claude-haiku-4-5-20251001,delivered,clean,46,games/claude-haiku-4-5-20251001.html
+Anthropic,claude-opus-4-5-20251101,delivered,clean,108,games/claude-opus-4-5-20251101.html
+Anthropic,claude-opus-4-6,delivered,clean,151,games/claude-opus-4-6.html
+Anthropic,claude-opus-4-7,delivered,clean,148,games/claude-opus-4-7.html
+Anthropic,claude-opus-4-8,delivered,clean,102,games/claude-opus-4-8.html
+Anthropic,claude-sonnet-4-5-20250929,delivered,flawed,142,
+Anthropic,claude-sonnet-4-6,delivered,clean,131,games/claude-sonnet-4-6.html
+DeepSeek,deepseek-v4-flash,delivered,clean,122,games/deepseek-deepseek-v4-flash.html
+DeepSeek,deepseek-v4-pro,delivered,clean,366,games/deepseek-deepseek-v4-pro.html
+Google,gemini-2.0-flash,did not deliver,not_delivered,1,
+Google,gemini-2.5-flash,delivered,clean,47,games/gemini-gemini-2-5-flash.html
+Google,gemini-2.5-flash-lite,delivered,clean,36,games/gemini-gemini-2-5-flash-lite.html
+Google,gemini-2.5-pro,delivered,not_sudoku,65,
+Google,gemini-3-flash-preview,delivered,clean,35,games/gemini-gemini-3-flash-preview.html
+Google,gemini-3-pro-preview,did not deliver,not_delivered,2,
+Google,gemini-3.1-flash-lite-preview,delivered,broken,9,
+Google,gemini-3.1-pro-preview,delivered,clean,99,games/gemini-gemini-3-1-pro-preview.html
+Google,gemini-3.5-flash,delivered,clean,76,games/gemini-gemini-3-5-flash.html
+MiniMax,MiniMax-M2,delivered,broken,60,
+MiniMax,MiniMax-M2.1,rejected (invalid output),not_delivered,62,
+MiniMax,MiniMax-M2.5,rejected (invalid output),not_delivered,47,
+MiniMax,MiniMax-M2.7,delivered,flawed,269,
+MiniMax,MiniMax-M2.7-highspeed,delivered,clean,165,games/minimax-minimax-m2-7-highspeed.html
+MiniMax,MiniMax-M3,did not deliver,not_delivered,627,
+MiniMax,MiniMax-Text-01,delivered,not_sudoku,115,
+Mistral,codestral-latest,delivered,flawed,44,
+Mistral,devstral-latest,delivered,broken,227,
+Mistral,devstral-medium-latest,delivered,clean,130,games/mistral-devstral-medium-latest.html
+Mistral,magistral-medium-latest,did not deliver,not_delivered,557,
+Mistral,magistral-small-latest,delivered,clean,49,games/mistral-magistral-small-latest.html
+Mistral,ministral-14b-latest,rejected (invalid output),not_delivered,94,
+Mistral,ministral-8b-latest,rejected (invalid output),not_delivered,79,
+Mistral,mistral-large-2512,delivered,correct,86,games/mistral-mistral-large-2512.html
+Mistral,mistral-large-latest,delivered,flawed,123,
+Mistral,mistral-small-latest,delivered,correct,35,games/mistral-mistral-small-latest.html
+OpenAI,gpt-5.2,did not deliver,not_delivered,3,
+OpenAI,gpt-5.2-codex,did not deliver,not_delivered,2,
+OpenAI,gpt-5.2-pro,delivered,flawed,468,
+OpenAI,gpt-5.3-codex,delivered,flawed,90,
+OpenAI,gpt-5.4,delivered,clean,89,games/gpt-5-4.html
+OpenAI,gpt-5.4-mini,delivered,clean,46,games/gpt-5-4-mini.html
+OpenAI,gpt-5.4-nano,rejected (invalid output),not_delivered,117,
+OpenAI,gpt-5.4-pro,did not deliver,not_delivered,755,
+OpenAI,gpt-5.5,did not deliver,not_delivered,3,
+OpenAI,gpt-5.5-pro,did not deliver,not_delivered,492,
+xAI,grok-4.20-0309-non-reasoning,rejected (invalid output),not_delivered,37,
+xAI,grok-4.20-0309-reasoning,rejected (invalid output),not_delivered,91,
+xAI,grok-4.20-multi-agent-0309,did not deliver,not_delivered,2,
+xAI,grok-4.3,delivered,correct,34,games/xai-grok-4-3.html
+Alibaba (Qwen),qwen3-coder-flash,delivered,clean,68,games/qwen3-coder-flash.html
+Alibaba (Qwen),qwen3-coder-next,delivered,clean,37,games/qwen3-coder-next.html
+Alibaba (Qwen),qwen3-coder-plus,rejected (invalid output),not_delivered,67,
+Alibaba (Qwen),qwen3-vl-plus,delivered,clean,128,games/qwen3-vl-plus.html
+Alibaba (Qwen),qwen3.5-flash,delivered,flawed,62,games/qwen3-5-flash.html
+Alibaba (Qwen),qwen3.5-plus,delivered,clean,198,games/qwen3-5-plus.html
+Alibaba (Qwen),qwen3.6-flash,delivered,broken,91,games/qwen3-6-flash.html
+Alibaba (Qwen),qwen3.6-plus,delivered,clean,245,games/qwen3-6-plus.html
+Alibaba (Qwen),qwen3.7-max,delivered,reduced,220,games/qwen3-7-max.html
+Alibaba (Qwen),qwen3.7-plus,delivered,flawed,233,games/qwen3-7-plus.html

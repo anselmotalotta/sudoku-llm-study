@@ -1,137 +1,384 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Can an LLM build a working game from one sentence? — A Sudoku benchmark across 60 models</title>
-<meta name="description" content="An independent, reproducible benchmark of 60 LLMs across 8 vendors, each asked to generate a complete playable Sudoku game from a single prompt. Every game is playable here.">
+<title>Generating Sudoku with 60 Language Models — One Prompt, Machine-Tested, Every Game Published</title>
+<meta name="description" content="An independent, reproducible generation study: 60 LLMs across 8 vendors, one identical prompt, each Sudoku game rendered, validated, played to a win, and published. Full methodology, data, prompt, and limitations.">
 <link rel="stylesheet" href="style.css">
 </head><body>
 <header class="hero"><div class="wrap">
-<h1>Can a language model build a working game from one sentence?</h1>
-<p class="sub">An independent, reproducible benchmark: <b>60 large language models</b> across <b>8 vendors</b>, each given the same one-line prompt and asked to generate a complete, playable <b>Sudoku</b> game — then machine-tested for whether it actually <i>renders</i>, is logically <i>valid</i>, and can be <i>played to a win</i>. Every generated game below is playable in your browser.</p>
-<p class="meta">Conducted 2026-06-23 · single prompt, single run per model · games created with PlayPrompt</p>
+<p class="kicker">Independent generation study · v1.0 · run date 2026-06-23</p>
+<h1>Generating Sudoku with 60 language models</h1>
+<p class="sub">One identical prompt, sent to 60 models across 8 vendors. Every generated game was rendered, validated, played to a win in a real browser, and published here. This is a relative, point-in-time comparison on a single task — read the methodology and limitations before quoting a number.</p>
 <div class="badges">
 <span class="badge"><b>60</b> models</span><span class="badge"><b>8</b> vendors</span>
-<span class="badge"><b>41</b> delivered a game</span><span class="badge"><b>23</b> correct &amp; clean</span>
-<span class="badge"><b>30</b> playable games published</span></div>
+<span class="badge"><b>41</b> delivered</span><span class="badge"><b>23</b> correct &amp; clean</span>
+<span class="badge"><b>30</b> games published &amp; playable</span></div>
 </div></header>
 
 <nav class="toc"><div class="wrap">
-<a href="#abstract">Abstract</a><a href="#method">Methodology</a><a href="#results">Results</a>
-<a href="#games">Playable games</a><a href="#failures">Failures</a><a href="#reliability">By vendor</a>
-<a href="#discussion">Discussion</a><a href="#limits">Limitations</a><a href="#repro">Reproducibility</a>
-<a href="#appendix">Full roster</a><a href="#disclaimer">Disclaimer</a>
+<a href="#disclosure">Disclosure</a><a href="#abstract">Abstract</a><a href="#prompt">The prompt</a>
+<a href="#method">Methodology</a><a href="#results">Results</a><a href="#games">Games</a>
+<a href="#vendors">By vendor</a><a href="#discussion">Discussion</a><a href="#threats">Threats to validity</a>
+<a href="#repro">Reproducibility</a><a href="#appendixA">Roster</a><a href="#appendixB">Exact prompt</a><a href="#refs">References</a>
 </div></nav>
 
 <main class="wrap">
 
+<section id="disclosure" class="callout-box"><h2>Disclosure (conflict of interest)</h2>
+<p>This study was produced by <b>PlayPrompt</b>, which builds a commercial platform that generates browser games from natural-language prompts. That is a conflict of interest, and we state it here rather than in a footnote. Three structural choices keep the comparison honest:</p>
+<ul class="tight">
+<li><b>PlayPrompt has no model in this race.</b> The platform orchestrates third-party models; this study compares those models against one another on a neutral task under identical conditions. There is no in-house model being flattered.</li>
+<li><b>Our own production default did poorly, and we lead with it.</b> The model PlayPrompt currently ships as its default (a MiniMax model) was among the weakest performers here — 1 of its 4 delivered games was clean. We foreground that rather than bury it.</li>
+<li><b>Everything is published.</b> The exact prompt (the end-user sentence and the full system instruction), every generated game (playable), every screenshot, the per-model results, and the scoring rules are all included. Anyone can re-run or re-score, and we will correct the record.</li>
+</ul>
+<p class="muted">Our fairness practices follow the literature on benchmark conflicts of interest — notably <i>The Leaderboard Illusion</i> (Singh et al., 2025) and vendor self-benchmarks such as DeepSource's — which document how vendor-run comparisons fail and which practices avoid it (see <a href="#refs">References</a>).</p>
+</section>
+
 <section id="abstract"><h2>Abstract</h2>
-<p class="lead">We measured how reliably large language models can turn a single natural-language prompt into a complete, correct, fully-playable browser game. Using <b>Sudoku</b> as the probe — because its correctness is objectively machine-verifiable — we gave <b>60 models</b> from <b>8 vendors</b> the identical prompt and evaluated each generated game on three gates: it must <b>deliver</b>, encode a <b>valid puzzle that can be driven to a recognized win</b>, and <b>visually render a usable board</b>. Of the 60, <b>41</b> produced a working game and <b>23</b> produced a board that was both logically correct and cleanly rendered. We report generation time, estimated cost, feature richness and a per-vendor reliability breakdown, and we <b>publish every generated game</b> so you can try them yourself. A central finding: logic-only checks give false positives — a model can compute a correct solution yet render a broken board, or render a convincing board around an invalid puzzle — so <b>both</b> logical and visual verification are required.</p>
+<p class="lead">We measured whether current language models can turn one natural-language prompt into a complete, correct, playable browser game. Sudoku was the probe because correctness is machine-verifiable. Sixty models from eight vendors received the same prompt; each output was scored on a frozen rubric: did it <b>deliver</b>, encode a <b>valid puzzle that can be driven to a recognized win</b>, and <b>visually render a usable board</b>. Of 60 models, <b>41</b> delivered a working game and <b>23</b> produced a board that was both logically correct and cleanly rendered; 1 produced a valid but reduced (4×4) variant, and the remainder were flawed, broken, or not Sudoku. The strongest result is methodological: logic-only checking produces false positives — at least one model computed a correct solution while rendering no grid at all — so both execution-based and pixel-level verification are required. We publish every generated game, every screenshot, the verbatim prompt, and the per-model data. Findings are relative and conditional on this prompt, these model snapshots, and this date.</p>
 </section>
 
-<section id="method"><h2>1. Methodology</h2>
-<h3>1.1 The probe</h3>
-<p>Every model received the exact same prompt — deliberately short and casual, to mirror how a real user types:</p>
-<div class="callout"><code>create a sudoku game with jazz music.</code></div>
-<p>Sudoku is an ideal probe because a correct result is checkable by machine on three independent axes: it must render a grid with given digits, the encoded puzzle must have a valid solution, and the game must recognize a completed win. It also exercises layout, logic and interactivity at once.</p>
-<h3>1.2 Models</h3>
-<p>We enumerated 60 current text models across 8 vendors (full roster in the <a href="#appendix">appendix</a>): Anthropic, OpenAI, Google, xAI, DeepSeek, Mistral, MiniMax and Alibaba (Qwen). The <b>only</b> variable was the text model that wrote the game; everything else — including the AI-generated jazz soundtrack — was held constant, so differences are attributable to the model.</p>
-<h3>1.3 Generation</h3>
-<p>Each model was given the prompt and produced a complete, self-contained game, which <a href="#about">PlayPrompt</a> turned into a single playable page (gameplay code plus an AI-generated jazz track). We recorded generation time and token usage for every model.</p>
-<h3>1.4 Evaluation — three gates</h3>
-<p>Every delivered game was tested in a real headless browser (Playwright / Chromium):</p>
+<section id="prompt"><h2>The prompt</h2>
+<p>Every model received the same end-user instruction, byte-for-byte. It was not shared with any vendor in advance, and it is deliberately short and casual to mirror real product usage:</p>
+<pre class="prompt">create a sudoku game with jazz music.</pre>
+<p><b>What the model actually received.</b> That sentence is not sent to the model verbatim. PlayPrompt first expands it, through an automatic prompt-enhancement step, into a fuller game brief (the <i>user</i> message), and wraps it in a fixed <i>system</i> instruction that asks for a single self-contained HTML file plus a small configuration block. Both texts were identical for all 60 models; only the model changed. The full, verbatim text of the system instruction, the enhancement instruction, and the configuration contract is in <a href="#appendixB">Appendix&nbsp;B</a>.</p>
+<p>This disclosure matters for fairness: a model marked <i>failed</i> here may have stumbled on the HTML/configuration formatting contract rather than on Sudoku itself. We treat that as a confound, not a hidden variable — see <a href="#threats">Threats to Validity</a>. The jazz soundtrack is produced by a separate, post-generation step and is <b>not</b> part of what the evaluated model writes; it does not affect any verdict.</p>
+</section>
+
+<section id="method"><h2>Methodology</h2>
+<h3>Models</h3>
+<p>Sixty current text models across eight vendors — Anthropic, OpenAI, Google, xAI, DeepSeek, Mistral, MiniMax, and Alibaba (Qwen) — were enumerated in advance; the full roster with exact model IDs and per-model outcomes is in <a href="#appendixA">Appendix&nbsp;A</a>. The model list, the prompt, the rubric, and the "best-by" definitions were fixed before the run.</p>
+<h3>Generation</h3>
+<p>Each model was driven through the same generation path via a per-request model override, so all 60 faced identical conditions — same prompt, same enhancement step, same system instruction, same packaging. The only variable was the text model that wrote the game. Models were run with default sampling settings; one attempt per model. Generation time and token usage were recorded per model.</p>
+<h3>Scoring rubric (pre-stated)</h3>
+<p>Each delivered game was assigned exactly one verdict against definitions fixed before grading:</p>
+<table><thead><tr><th>Verdict</th><th>Definition</th></tr></thead><tbody>
+<tr><td><span class="tag t-clean">clean</span></td><td>Renders a real, non-garbled 9×9 grid with visible 3×3 box divisions and printed givens; the encoded puzzle is valid; the full solution can be driven in and the game recognizes a win.</td></tr>
+<tr><td><span class="tag t-reduced">reduced</span></td><td>Valid and playable and driven to a win, but a reduced/non-standard variant (e.g. 4×4) rather than standard 9×9.</td></tr>
+<tr><td><span class="tag t-flawed">flawed</span></td><td>Renders, but the puzzle is invalid, the input is broken, or there is nothing to play.</td></tr>
+<tr><td><span class="tag t-broken">broken</span></td><td>No usable board renders, or the game is not Sudoku.</td></tr>
+</tbody></table>
+<p class="muted"><b>Solution uniqueness</b> was not part of the clean bar (a proper Sudoku has exactly one solution; our bar was a valid, winnable board). Where uniqueness was measured and failed, the game is kept as clean but flagged ⚠ — see Threats to Validity.</p>
+<h3>Two-stage QA harness</h3>
+<p>Every delivered game was tested in a real headless browser (Chromium via Playwright):</p>
 <ul class="tight">
-<li><b>Delivery</b> — did the model return a complete game at all?</li>
-<li><b>Logic</b> — load the game, extract the puzzle and its intended solution, verify it is a valid Sudoku, then <b>drive the full correct solution into the board</b> through the game's own controls and confirm the game <b>registers a win</b>.</li>
-<li><b>Visual</b> — screenshot the started game and inspect the pixels for a real grid, visible 3×3 box divisions, printed given numbers, and a non-garbled layout.</li>
+<li><b>Stage 1 — execution.</b> Load the game, extract the puzzle and its intended solution, verify validity programmatically, then drive the full correct solution through the game's own controls and confirm it registers a win.</li>
+<li><b>Stage 2 — pixels.</b> Screenshot the started game and inspect the rendering for a real grid, visible box divisions, printed givens, and a non-garbled layout.</li>
 </ul>
-<p>Each game was classed <span class="tag t-clean">clean</span> (correct 9×9, rendered well, driven to a win), <span class="tag t-reduced">reduced</span> (a valid but non-standard variant), <span class="tag t-flawed">flawed</span> (renders but invalid puzzle / broken input / nothing to play) or <span class="tag t-broken">broken</span> (no usable board).</p>
-<h3>1.5 Cost &amp; features</h3>
-<p>Estimated text-generation cost = recorded token usage × each model's <b>published per-token list price</b> (asset costs excluded, to isolate the text model). Feature counts are the number of distinct interactive elements catalogued per game and are approximate.</p>
+<p>Stage 2 exists because Stage 1 is not sufficient. One model (<code>grok-4.3</code>) passed every execution check — valid solver, correct win logic — yet rendered no grid at all. A logic-only study would have scored it as passing. The screenshot is what caught it. Narrating that failure mode is the point: generated software has to be observed, not just trusted.</p>
+<h3>Cost and features</h3>
+<p>Estimated text-generation cost = recorded token usage × each vendor's published list price (asset costs excluded, to isolate the text model). Prices were read from each vendor's public pricing page on 2026-06-23; a small number (Alibaba/Qwen) are estimates and are flagged as such. Feature counts are the number of distinct interactive elements catalogued per game and are approximate.</p>
+<details class="glossary"><summary>Glossary</summary>
+<ul class="tight">
+<li><b>Delivered</b> — the model returned a complete game that the pipeline accepted.</li>
+<li><b>Valid puzzle</b> — the printed givens contain no duplicate in any row, column, or 3×3 box, and a complete solution exists.</li>
+<li><b>Unique solution</b> — exactly one completion exists (a property a proper Sudoku has; not required for "clean" here).</li>
+<li><b>Win-detected</b> — after the correct solution was entered, the game itself signalled a win.</li>
+<li><b>Clean / visually correct</b> — a real grid renders with box divisions and printed givens, non-garbled.</li>
+</ul></details>
 </section>
 
-<section id="results"><h2>2. Results</h2>
-<h3>2.1 The funnel</h3>
-<div class="grid-funnel">
-<div>Models tested</div><div class="n">60</div>
-<div>Delivered a working game</div><div class="n">41</div>
-<div class="hl">Correct <b>and</b> cleanly-rendered 9×9</div><div class="n hl">23</div>
-<div>Reduced (valid 4×4) variant</div><div class="n">1</div>
-<div>Flawed / broken / not-Sudoku</div><div class="n">17</div>
+<section id="results"><h2>Results</h2>
+<h3>Attrition funnel</h3>
+<div class="funnel">
+<div class="frow"><span>Models considered</span><span class="fn">60</span></div>
+<div class="frow"><span>Delivered a working game</span><span class="fn">41</span></div>
+<div class="frow hl"><span>Correct <b>and</b> cleanly-rendered 9×9</span><span class="fn">23</span></div>
+<div class="frow"><span>Reduced (valid 4×4) variant</span><span class="fn">1</span></div>
+<div class="frow"><span>Flawed / broken / not-Sudoku</span><span class="fn">17</span></div>
 </div>
-<h3 id="games">2.2 The 23 verified games — playable, sorted by cost</h3>
-<p>Each row links to the actual game (it runs in your browser, jazz soundtrack included) and its screenshot. <span class="disclaimer">Costs are estimates from published list prices; ⚠ marks a puzzle that is valid and winnable but not uniquely solvable.</span></p>
-<table><thead><tr><th>Model</th><th>Gen time</th><th>Tokens (in/out)</th><th>Est. cost</th><th>Features</th><th>Screenshot</th><th>Play</th></tr></thead>
-<tbody><tr><td><code>gemini-2.5-flash-lite</code></td><td>36s</td><td>10243/6808</td><td>$0.0037</td><td>15</td><td class='shot-cell'><a href="games/gemini-gemini-2-5-flash-lite.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-2-5-flash-lite.png" alt="gemini-2.5-flash-lite screenshot"></a></td><td><a class="play" href="games/gemini-gemini-2-5-flash-lite.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>deepseek-v4-flash</code></td><td>122s</td><td>15305/16672</td><td>$0.0068</td><td>18</td><td class='shot-cell'><a href="games/deepseek-deepseek-v4-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/deepseek-deepseek-v4-flash.png" alt="deepseek-v4-flash screenshot"></a></td><td><a class="play" href="games/deepseek-deepseek-v4-flash.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>qwen3-vl-plus</code></td><td>128s</td><td>13255/9919</td><td>$0.0090</td><td>11</td><td class='shot-cell'><a href="games/qwen3-vl-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-vl-plus.png" alt="qwen3-vl-plus screenshot"></a></td><td><a class="play" href="games/qwen3-vl-plus.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>qwen3-coder-flash</code> <span class="tag t-flawed" title="valid & winnable, but the generated puzzle is not uniquely solvable">⚠ non-unique solution</span></td><td>68s</td><td>10012/6787</td><td>$0.0132</td><td>16</td><td class='shot-cell'><a href="games/qwen3-coder-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-coder-flash.png" alt="qwen3-coder-flash screenshot"></a></td><td><a class="play" href="games/qwen3-coder-flash.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>devstral-medium-latest</code></td><td>130s</td><td>10180/6742</td><td>$0.0176</td><td>13</td><td class='shot-cell'><a href="games/mistral-devstral-medium-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-devstral-medium-latest.png" alt="devstral-medium-latest screenshot"></a></td><td><a class="play" href="games/mistral-devstral-medium-latest.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>qwen3.5-plus</code></td><td>198s</td><td>10571/13175</td><td>$0.0200</td><td>13</td><td class='shot-cell'><a href="games/qwen3-5-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-5-plus.png" alt="qwen3.5-plus screenshot"></a></td><td><a class="play" href="games/qwen3-5-plus.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>deepseek-v4-pro</code></td><td>366s</td><td>11181/17558</td><td>$0.0201</td><td>15</td><td class='shot-cell'><a href="games/deepseek-deepseek-v4-pro.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/deepseek-deepseek-v4-pro.png" alt="deepseek-v4-pro screenshot"></a></td><td><a class="play" href="games/deepseek-deepseek-v4-pro.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>MiniMax-M2.7-highspeed</code></td><td>165s</td><td>15327/13471</td><td>$0.0208</td><td>13</td><td class='shot-cell'><a href="games/minimax-minimax-m2-7-highspeed.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/minimax-minimax-m2-7-highspeed.png" alt="MiniMax-M2.7-highspeed screenshot"></a></td><td><a class="play" href="games/minimax-minimax-m2-7-highspeed.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>magistral-small-latest</code> <span class="tag t-flawed" title="valid & winnable, but the generated puzzle is not uniquely solvable">⚠ 3x3 box borders not emphasized</span></td><td>49s</td><td>13319/9807</td><td>$0.0214</td><td>17</td><td class='shot-cell'><a href="games/mistral-magistral-small-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-magistral-small-latest.png" alt="magistral-small-latest screenshot"></a></td><td><a class="play" href="games/mistral-magistral-small-latest.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>qwen3.6-plus</code> <span class="tag t-flawed" title="valid & winnable, but the generated puzzle is not uniquely solvable">⚠ non-unique solution</span></td><td>245s</td><td>12816/14911</td><td>$0.0230</td><td>20</td><td class='shot-cell'><a href="games/qwen3-6-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-6-plus.png" alt="qwen3.6-plus screenshot"></a></td><td><a class="play" href="games/qwen3-6-plus.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gemini-3-flash-preview</code></td><td>35s</td><td>7716/7240</td><td>$0.0256</td><td>11</td><td class='shot-cell'><a href="games/gemini-gemini-3-flash-preview.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-flash-preview.png" alt="gemini-3-flash-preview screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-flash-preview.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gemini-2.5-flash</code></td><td>47s</td><td>8900/10281</td><td>$0.0284</td><td>14</td><td class='shot-cell'><a href="games/gemini-gemini-2-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-2-5-flash.png" alt="gemini-2.5-flash screenshot"></a></td><td><a class="play" href="games/gemini-gemini-2-5-flash.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gpt-5.4-mini</code></td><td>46s</td><td>10026/6711</td><td>$0.0377</td><td>16</td><td class='shot-cell'><a href="games/gpt-5-4-mini.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gpt-5-4-mini.png" alt="gpt-5.4-mini screenshot"></a></td><td><a class="play" href="games/gpt-5-4-mini.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-haiku-4-5-20251001</code></td><td>46s</td><td>11737/8014</td><td>$0.0518</td><td>12</td><td class='shot-cell'><a href="games/claude-haiku-4-5-20251001.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-haiku-4-5-20251001.png" alt="claude-haiku-4-5-20251001 screenshot"></a></td><td><a class="play" href="games/claude-haiku-4-5-20251001.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>qwen3-coder-next</code></td><td>37s</td><td>10973/7804</td><td>$0.0750</td><td>15</td><td class='shot-cell'><a href="games/qwen3-coder-next.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-coder-next.png" alt="qwen3-coder-next screenshot"></a></td><td><a class="play" href="games/qwen3-coder-next.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gemini-3.5-flash</code> <span class="tag t-flawed" title="valid & winnable, but the generated puzzle is not uniquely solvable">⚠ tempo modal on load, then clean grid</span></td><td>76s</td><td>11791/15151</td><td>$0.1540</td><td>15</td><td class='shot-cell'><a href="games/gemini-gemini-3-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-5-flash.png" alt="gemini-3.5-flash screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-5-flash.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gemini-3.1-pro-preview</code></td><td>99s</td><td>9036/12353</td><td>$0.1663</td><td>18</td><td class='shot-cell'><a href="games/gemini-gemini-3-1-pro-preview.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-1-pro-preview.png" alt="gemini-3.1-pro-preview screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-1-pro-preview.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-sonnet-4-6</code></td><td>131s</td><td>13923/10204</td><td>$0.1948</td><td>11</td><td class='shot-cell'><a href="games/claude-sonnet-4-6.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-sonnet-4-6.png" alt="claude-sonnet-4-6 screenshot"></a></td><td><a class="play" href="games/claude-sonnet-4-6.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>gpt-5.4</code></td><td>89s</td><td>14263/11004</td><td>$0.2007</td><td>19</td><td class='shot-cell'><a href="games/gpt-5-4.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gpt-5-4.png" alt="gpt-5.4 screenshot"></a></td><td><a class="play" href="games/gpt-5-4.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-opus-4-5-20251101</code></td><td>108s</td><td>13788/10100</td><td>$0.3214</td><td>15</td><td class='shot-cell'><a href="games/claude-opus-4-5-20251101.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-5-20251101.png" alt="claude-opus-4-5-20251101 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-5-20251101.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-opus-4-6</code></td><td>151s</td><td>15364/11626</td><td>$0.3675</td><td>17</td><td class='shot-cell'><a href="games/claude-opus-4-6.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-6.png" alt="claude-opus-4-6 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-6.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-opus-4-8</code></td><td>102s</td><td>18257/12868</td><td>$0.4130</td><td>13</td><td class='shot-cell'><a href="games/claude-opus-4-8.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-8.png" alt="claude-opus-4-8 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-8.html" target="_blank" rel="noopener">▶ play</a></td></tr><tr><td><code>claude-opus-4-7</code></td><td>148s</td><td>19231/13786</td><td>$0.4408</td><td>15</td><td class='shot-cell'><a href="games/claude-opus-4-7.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-7.png" alt="claude-opus-4-7 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-7.html" target="_blank" rel="noopener">▶ play</a></td></tr></tbody></table>
-<h3>2.3 Best of</h3>
-<ul class="tight">
-<li><b>Fastest:</b> <code>gemini-3-flash-preview</code> — 35s (<code>qwen3-coder-next</code> a near-tie at 37s).</li>
-<li><b>Cheapest:</b> <code>gemini-2.5-flash-lite</code> — ~$0.004 (<code>qwen3-vl-plus</code> ~$0.009 among the next cheapest).</li>
-<li><b>Most features:</b> <code>gpt-5.4</code> — 19 (feature counts are approximate and not strictly comparable across games).</li>
-<li><b>Best overall value:</b> <code>gemini-2.5-flash-lite</code> — fast, cheap, clean and feature-rich.</li>
-<li><b>Coding-tuned models punch above their price</b> — the standout cheap-and-fast entries are repeatedly the vendors' <i>coder</i> variants, consistent with this being, at heart, a code-generation task.</li>
-</ul>
-<h3>2.4 A reduced variant</h3>
-<p>One model produced a valid, playable game that was <b>not</b> standard 9×9 Sudoku:</p>
+<p class="muted">Every rate in this study is reported with its denominator. The 19 not-delivered models (60−41) failed at generation for mixed reasons — rejected output, rate-limits, or timeouts — itemised per model in <a href="#appendixA">Appendix&nbsp;A</a>; infrastructure failures (rate-limit/timeout) are labelled as such and not counted against the model's capability.</p>
+
+<h3 id="games">The 23 clean games — playable, sorted by cost</h3>
+<p>Each row links to the actual game (it runs in your browser) and its screenshot. <span class="muted">⚠ marks a puzzle that is valid and winnable but not uniquely solvable; estimated prices are noted in the methodology.</span></p>
+<table><thead><tr><th>Model</th><th>Gen&nbsp;time</th><th>Tokens&nbsp;(in/out)</th><th>Est.&nbsp;cost</th><th>Features</th><th>Screenshot</th><th>Play</th></tr></thead>
+<tbody><tr><td><code>gemini-2.5-flash-lite</code></td><td>36s</td><td>10243/6808</td><td>$0.0037</td><td>15</td><td class='shot-cell'><a href="games/gemini-gemini-2-5-flash-lite.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-2-5-flash-lite.png" alt="gemini-2.5-flash-lite screenshot"></a></td><td><a class="play" href="games/gemini-gemini-2-5-flash-lite.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>deepseek-v4-flash</code></td><td>122s</td><td>15305/16672</td><td>$0.0068</td><td>18</td><td class='shot-cell'><a href="games/deepseek-deepseek-v4-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/deepseek-deepseek-v4-flash.png" alt="deepseek-v4-flash screenshot"></a></td><td><a class="play" href="games/deepseek-deepseek-v4-flash.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>qwen3-vl-plus</code></td><td>128s</td><td>13255/9919</td><td>$0.0090</td><td>11</td><td class='shot-cell'><a href="games/qwen3-vl-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-vl-plus.png" alt="qwen3-vl-plus screenshot"></a></td><td><a class="play" href="games/qwen3-vl-plus.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>qwen3-coder-flash</code> <span class="tag t-flawed" title="valid &amp; winnable, but the generated puzzle is not uniquely solvable">⚠ non-unique solution</span></td><td>68s</td><td>10012/6787</td><td>$0.0132</td><td>16</td><td class='shot-cell'><a href="games/qwen3-coder-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-coder-flash.png" alt="qwen3-coder-flash screenshot"></a></td><td><a class="play" href="games/qwen3-coder-flash.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>devstral-medium-latest</code></td><td>130s</td><td>10180/6742</td><td>$0.0176</td><td>13</td><td class='shot-cell'><a href="games/mistral-devstral-medium-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-devstral-medium-latest.png" alt="devstral-medium-latest screenshot"></a></td><td><a class="play" href="games/mistral-devstral-medium-latest.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>qwen3.5-plus</code></td><td>198s</td><td>10571/13175</td><td>$0.0200</td><td>13</td><td class='shot-cell'><a href="games/qwen3-5-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-5-plus.png" alt="qwen3.5-plus screenshot"></a></td><td><a class="play" href="games/qwen3-5-plus.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>deepseek-v4-pro</code></td><td>366s</td><td>11181/17558</td><td>$0.0201</td><td>15</td><td class='shot-cell'><a href="games/deepseek-deepseek-v4-pro.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/deepseek-deepseek-v4-pro.png" alt="deepseek-v4-pro screenshot"></a></td><td><a class="play" href="games/deepseek-deepseek-v4-pro.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>MiniMax-M2.7-highspeed</code></td><td>165s</td><td>15327/13471</td><td>$0.0208</td><td>13</td><td class='shot-cell'><a href="games/minimax-minimax-m2-7-highspeed.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/minimax-minimax-m2-7-highspeed.png" alt="MiniMax-M2.7-highspeed screenshot"></a></td><td><a class="play" href="games/minimax-minimax-m2-7-highspeed.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>magistral-small-latest</code> <span class="tag t-flawed" title="valid &amp; winnable, but the generated puzzle is not uniquely solvable">⚠ 3x3 box borders not emphasized</span></td><td>49s</td><td>13319/9807</td><td>$0.0214</td><td>17</td><td class='shot-cell'><a href="games/mistral-magistral-small-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-magistral-small-latest.png" alt="magistral-small-latest screenshot"></a></td><td><a class="play" href="games/mistral-magistral-small-latest.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>qwen3.6-plus</code> <span class="tag t-flawed" title="valid &amp; winnable, but the generated puzzle is not uniquely solvable">⚠ non-unique solution</span></td><td>245s</td><td>12816/14911</td><td>$0.0230</td><td>20</td><td class='shot-cell'><a href="games/qwen3-6-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-6-plus.png" alt="qwen3.6-plus screenshot"></a></td><td><a class="play" href="games/qwen3-6-plus.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gemini-3-flash-preview</code></td><td>35s</td><td>7716/7240</td><td>$0.0256</td><td>11</td><td class='shot-cell'><a href="games/gemini-gemini-3-flash-preview.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-flash-preview.png" alt="gemini-3-flash-preview screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-flash-preview.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gemini-2.5-flash</code></td><td>47s</td><td>8900/10281</td><td>$0.0284</td><td>14</td><td class='shot-cell'><a href="games/gemini-gemini-2-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-2-5-flash.png" alt="gemini-2.5-flash screenshot"></a></td><td><a class="play" href="games/gemini-gemini-2-5-flash.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gpt-5.4-mini</code></td><td>46s</td><td>10026/6711</td><td>$0.0377</td><td>16</td><td class='shot-cell'><a href="games/gpt-5-4-mini.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gpt-5-4-mini.png" alt="gpt-5.4-mini screenshot"></a></td><td><a class="play" href="games/gpt-5-4-mini.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-haiku-4-5-20251001</code></td><td>46s</td><td>11737/8014</td><td>$0.0518</td><td>12</td><td class='shot-cell'><a href="games/claude-haiku-4-5-20251001.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-haiku-4-5-20251001.png" alt="claude-haiku-4-5-20251001 screenshot"></a></td><td><a class="play" href="games/claude-haiku-4-5-20251001.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>qwen3-coder-next</code></td><td>37s</td><td>10973/7804</td><td>$0.0750</td><td>15</td><td class='shot-cell'><a href="games/qwen3-coder-next.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-coder-next.png" alt="qwen3-coder-next screenshot"></a></td><td><a class="play" href="games/qwen3-coder-next.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gemini-3.5-flash</code> <span class="tag t-flawed" title="valid &amp; winnable, but the generated puzzle is not uniquely solvable">⚠ tempo modal on load, then clean grid</span></td><td>76s</td><td>11791/15151</td><td>$0.1540</td><td>15</td><td class='shot-cell'><a href="games/gemini-gemini-3-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-5-flash.png" alt="gemini-3.5-flash screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-5-flash.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gemini-3.1-pro-preview</code></td><td>99s</td><td>9036/12353</td><td>$0.1663</td><td>18</td><td class='shot-cell'><a href="games/gemini-gemini-3-1-pro-preview.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gemini-gemini-3-1-pro-preview.png" alt="gemini-3.1-pro-preview screenshot"></a></td><td><a class="play" href="games/gemini-gemini-3-1-pro-preview.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-sonnet-4-6</code></td><td>131s</td><td>13923/10204</td><td>$0.1948</td><td>11</td><td class='shot-cell'><a href="games/claude-sonnet-4-6.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-sonnet-4-6.png" alt="claude-sonnet-4-6 screenshot"></a></td><td><a class="play" href="games/claude-sonnet-4-6.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>gpt-5.4</code></td><td>89s</td><td>14263/11004</td><td>$0.2007</td><td>19</td><td class='shot-cell'><a href="games/gpt-5-4.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/gpt-5-4.png" alt="gpt-5.4 screenshot"></a></td><td><a class="play" href="games/gpt-5-4.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-opus-4-5-20251101</code></td><td>108s</td><td>13788/10100</td><td>$0.3214</td><td>15</td><td class='shot-cell'><a href="games/claude-opus-4-5-20251101.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-5-20251101.png" alt="claude-opus-4-5-20251101 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-5-20251101.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-opus-4-6</code></td><td>151s</td><td>15364/11626</td><td>$0.3675</td><td>17</td><td class='shot-cell'><a href="games/claude-opus-4-6.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-6.png" alt="claude-opus-4-6 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-6.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-opus-4-8</code></td><td>102s</td><td>18257/12868</td><td>$0.4130</td><td>13</td><td class='shot-cell'><a href="games/claude-opus-4-8.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-8.png" alt="claude-opus-4-8 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-8.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr><tr><td><code>claude-opus-4-7</code></td><td>148s</td><td>19231/13786</td><td>$0.4408</td><td>15</td><td class='shot-cell'><a href="games/claude-opus-4-7.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/claude-opus-4-7.png" alt="claude-opus-4-7 screenshot"></a></td><td><a class="play" href="games/claude-opus-4-7.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr></tbody></table>
+
+<h3>Best by dimension</h3>
+<p>Reported as separate dimensions, not a single composite ranking. Magnitudes are observed values on this run.</p>
+<div class="cards">
+<div class="card"><div class="ck">Fastest</div><div class="cv"><code>gemini-3-flash-preview</code></div><div class="cm">35s · clean 9×9</div></div>
+<div class="card"><div class="ck">Cheapest</div><div class="cv"><code>gemini-2.5-flash-lite</code></div><div class="cm">$0.0037 est. · clean 9×9</div></div>
+<div class="card"><div class="ck">Most features</div><div class="cv"><code>qwen3.6-plus</code></div><div class="cm">20 catalogued</div></div>
+<div class="card"><div class="ck">Clean-game cost range</div><div class="cv">$0.0037 – $0.4408</div><div class="cm">≈118× spread</div></div>
+</div>
+<p class="muted">Cost did not predict quality: the single most expensive run produced an <i>invalid</i> puzzle (see below), while the cheapest clean game cost a fraction of a cent. Generation time ranged 35–366s among clean games (median 102s).</p>
+
+<h3>Reduced / non-standard variant</h3>
 <table><thead><tr><th>Model</th><th>What it built</th><th>Verdict</th><th>Screenshot</th><th>Play</th></tr></thead>
-<tbody><tr><td><code>qwen3.7-max</code></td><td class="wrap-cell">A 4×4 "lounge" Sudoku (digits 1–4, 2×2 boxes) — valid, playable, and driven to a win, but a reduced grid rather than the standard 9×9.</td><td><span class="tag t-reduced">reduced</span></td><td class="shot-cell"><a href="games/qwen3-7-max.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-7-max.png" alt="qwen3.7-max screenshot"></a></td><td><a class="play" href="games/qwen3-7-max.html" target="_blank" rel="noopener">▶ play</a></td></tr></tbody></table>
-</section>
+<tbody><tr><td><code>qwen3.7-max</code></td><td class="wrap-cell">A 4×4 "lounge" Sudoku (digits 1–4, 2×2 boxes) — valid, playable, driven to a win, but a reduced grid rather than standard 9×9.</td><td><span class="tag t-reduced">reduced</span></td><td class="shot-cell"><a href="games/qwen3-7-max.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-7-max.png" alt="qwen3.7-max screenshot"></a></td><td><a class="play" href="games/qwen3-7-max.html" target="_blank" rel="noopener">▶&nbsp;play</a></td></tr></tbody></table>
 
-<section id="failures"><h2>3. Where models failed</h2>
-<p>The remaining delivered games failed one of the gates. This is where the bulk of the variance is — and where the two cautionary findings live: a game can render perfectly yet encode an <b>invalid puzzle</b> (e.g. <code>gpt-5.2-pro</code>, <code>qwen3.5-flash</code>), or pass every logic check yet <b>render nothing usable</b> (<code>grok-4.3</code>). Neither is caught without <i>both</i> a logic and a visual gate.</p>
+<h3>Where models failed</h3>
+<p>All delivered-but-not-clean games are listed here, by a single rule applied to every vendor — nothing was quietly dropped. Two failure modes are worth foregrounding: a game can render perfectly yet encode an <b>invalid puzzle</b> (e.g. <code>gpt-5.2-pro</code>, <code>qwen3.5-flash</code>), or pass every execution check yet <b>render nothing usable</b> (<code>grok-4.3</code>). Neither is caught without both QA stages.</p>
 <table><thead><tr><th>Model</th><th>Verdict</th><th class="wrap-cell">What went wrong</th><th>Screenshot</th></tr></thead>
-<tbody><tr><td><code>qwen3.5-flash</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Renders a clean 9×9, but the puzzle is invalid — duplicate digits among the printed givens within columns; contradictory as printed.</td><td class='shot-cell'><a href="games/qwen3-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-5-flash.png" alt="qwen3.5-flash screenshot"></a></td></tr><tr><td><code>qwen3.7-plus</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>A 4×4 variant that loads fully pre-filled with the completed solution — there is nothing to play.</td><td class='shot-cell'><a href="games/qwen3-7-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-7-plus.png" alt="qwen3.7-plus screenshot"></a></td></tr><tr><td><code>qwen3.6-flash</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>The board never paints — a runtime error aborts drawing on every frame, leaving the play area empty.</td><td class='shot-cell'><a href="games/qwen3-6-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-6-flash.png" alt="qwen3.6-flash screenshot"></a></td></tr><tr><td><code>claude-sonnet-4-5-20250929</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Easy and Medium puzzles are valid and winnable, but the Hard difficulty generates an invalid board.</td><td class='shot-cell'>—</td></tr><tr><td><code>gpt-5.2-pro</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Most generated boards are invalid Sudoku — they contain duplicate digits within rows/columns (no valid solution).</td><td class='shot-cell'>—</td></tr><tr><td><code>gpt-5.3-codex</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid, well-structured puzzle, but a gameplay/input issue blocked a clean win in testing.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-M2.7</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid, solvable puzzle, but the number-input mechanism is broken.</td><td class='shot-cell'>—</td></tr><tr><td><code>codestral-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>The puzzle generator produces mathematically invalid solutions (a digit is reused within a unit).</td><td class='shot-cell'>—</td></tr><tr><td><code>mistral-large-2512</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Number pad and decorative elements render on top of the board; the input box overlaps cells.</td><td class='shot-cell'><a href="games/mistral-mistral-large-2512.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-mistral-large-2512.png" alt="mistral-large-2512 screenshot"></a></td></tr><tr><td><code>mistral-large-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid puzzle, but the input mechanism is broken — numbers cannot be entered reliably.</td><td class='shot-cell'>—</td></tr><tr><td><code>mistral-small-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>The grid and 3×3 lines render very faintly and a floating control is mispositioned.</td><td class='shot-cell'><a href="games/mistral-mistral-small-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-mistral-small-latest.png" alt="mistral-small-latest screenshot"></a></td></tr><tr><td><code>gemini-2.5-pro</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Produced a different game entirely (a falling-fruit arcade game), not Sudoku.</td><td class='shot-cell'>—</td></tr><tr><td><code>gemini-3.1-flash-lite-preview</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>No win-detection logic — the puzzle cannot be completed.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-M2</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>The win-check contains a logic error; the game is unwinnable.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-Text-01</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Renders a 9×9 grid with input, but it is not Sudoku — there are no given clues.</td><td class='shot-cell'>—</td></tr><tr><td><code>devstral-latest</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Renders and accepts input, but the puzzle generator is fundamentally broken (invalid puzzles).</td><td class='shot-cell'>—</td></tr><tr><td><code>grok-4.3</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>No usable grid renders — only a stray line fragment and a colored blob, no given numbers. (The internal logic is sound, but nothing playable appears — a clear case for pixel-level checks.)</td><td class='shot-cell'><a href="games/xai-grok-4-3.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/xai-grok-4-3.png" alt="grok-4.3 screenshot"></a></td></tr></tbody></table>
+<tbody><tr><td><code>qwen3.5-flash</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Renders a clean 9×9, but the puzzle is invalid — duplicate digits among the printed givens within columns; contradictory as printed.</td><td class='shot-cell'><a href="games/qwen3-5-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-5-flash.png" alt="qwen3.5-flash screenshot"></a></td></tr><tr><td><code>qwen3.7-plus</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>A 4×4 variant that loads fully pre-filled with the completed solution — there is nothing to play.</td><td class='shot-cell'><a href="games/qwen3-7-plus.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-7-plus.png" alt="qwen3.7-plus screenshot"></a></td></tr><tr><td><code>qwen3.6-flash</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>The board never paints — a runtime error aborts drawing on every frame, leaving the play area empty.</td><td class='shot-cell'><a href="games/qwen3-6-flash.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/qwen3-6-flash.png" alt="qwen3.6-flash screenshot"></a></td></tr><tr><td><code>claude-sonnet-4-5-20250929</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Easy and Medium puzzles are valid and winnable, but the Hard difficulty generates an invalid board.</td><td class='shot-cell'>—</td></tr><tr><td><code>gpt-5.2-pro</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Most generated boards are invalid Sudoku — duplicate digits within rows/columns (no valid solution). This was also the most expensive run.</td><td class='shot-cell'>—</td></tr><tr><td><code>gpt-5.3-codex</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid, well-structured puzzle, but a gameplay/input issue blocked a clean win in testing.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-M2.7</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid, solvable puzzle, but the number-input mechanism is broken.</td><td class='shot-cell'>—</td></tr><tr><td><code>codestral-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>The puzzle generator produces mathematically invalid solutions (a digit is reused within a unit).</td><td class='shot-cell'>—</td></tr><tr><td><code>mistral-large-2512</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Number pad and decorative elements render on top of the board; the input box overlaps cells.</td><td class='shot-cell'><a href="games/mistral-mistral-large-2512.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-mistral-large-2512.png" alt="mistral-large-2512 screenshot"></a></td></tr><tr><td><code>mistral-large-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>Valid puzzle, but the input mechanism is broken — numbers cannot be entered reliably.</td><td class='shot-cell'>—</td></tr><tr><td><code>mistral-small-latest</code></td><td><span class='tag t-flawed'>flawed</span></td><td class='wrap-cell'>The grid and 3×3 lines render very faintly and a floating control is mispositioned.</td><td class='shot-cell'><a href="games/mistral-mistral-small-latest.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/mistral-mistral-small-latest.png" alt="mistral-small-latest screenshot"></a></td></tr><tr><td><code>gemini-2.5-pro</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Produced a different game entirely (a falling-fruit arcade game), not Sudoku.</td><td class='shot-cell'>—</td></tr><tr><td><code>gemini-3.1-flash-lite-preview</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>No win-detection logic — the puzzle cannot be completed.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-M2</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>The win-check contains a logic error; the game is unwinnable.</td><td class='shot-cell'>—</td></tr><tr><td><code>MiniMax-Text-01</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Renders a 9×9 grid with input, but it is not Sudoku — there are no given clues.</td><td class='shot-cell'>—</td></tr><tr><td><code>devstral-latest</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>Renders and accepts input, but the puzzle generator is fundamentally broken (invalid puzzles).</td><td class='shot-cell'>—</td></tr><tr><td><code>grok-4.3</code></td><td><span class='tag t-broken'>broken</span></td><td class='wrap-cell'>No usable grid renders — only a stray line fragment and a colored blob, no given numbers. The internal solver and win-logic are correct, which is exactly why a logic-only check would wrongly pass it; the pixels reveal the failure.</td><td class='shot-cell'><a href="games/xai-grok-4-3.html" target="_blank" rel="noopener"><img class="shot" loading="lazy" src="assets/xai-grok-4-3.png" alt="grok-4.3 screenshot"></a></td></tr></tbody></table>
 </section>
 
-<section id="reliability"><h2>4. Reliability by vendor</h2>
-<p>Clean 9×9 games as a share of games delivered:</p>
-<table><thead><tr><th>Vendor</th><th>Models</th><th>Delivered</th><th>Clean 9×9</th><th>Clean rate</th></tr></thead>
-<tbody><tr><td>Deepseek</td><td>2</td><td>2</td><td>2</td><td>100%</td></tr><tr><td>Anthropic</td><td>8</td><td>7</td><td>6</td><td>86%</td></tr><tr><td>Google</td><td>9</td><td>7</td><td>5</td><td>71%</td></tr><tr><td>Alibaba (Qwen)</td><td>10</td><td>9</td><td>5</td><td>56%</td></tr><tr><td>OpenAI</td><td>10</td><td>4</td><td>2</td><td>50%</td></tr><tr><td>Mistral</td><td>10</td><td>7</td><td>2</td><td>29%</td></tr><tr><td>MiniMax</td><td>7</td><td>4</td><td>1</td><td>25%</td></tr><tr><td>xAI</td><td>4</td><td>1</td><td>0</td><td>0%</td></tr></tbody></table>
+<section id="vendors"><h2>Results by vendor</h2>
+<p>Clean 9×9 games as a share of games delivered. This is a descriptive roll-up of this run, not a general verdict on any vendor; each cell carries its denominator.</p>
+<table><thead><tr><th>Vendor</th><th>Models tested</th><th>Delivered</th><th>Clean 9×9</th><th>Clean rate</th></tr></thead>
+<tbody><tr><td>DeepSeek</td><td>2</td><td>2</td><td>2</td><td>100%</td></tr><tr><td>Anthropic</td><td>8</td><td>7</td><td>6</td><td>86%</td></tr><tr><td>Google</td><td>9</td><td>7</td><td>5</td><td>71%</td></tr><tr><td>Alibaba (Qwen)</td><td>10</td><td>9</td><td>5</td><td>56%</td></tr><tr><td>OpenAI</td><td>10</td><td>4</td><td>2</td><td>50%</td></tr><tr><td>Mistral</td><td>10</td><td>7</td><td>2</td><td>29%</td></tr><tr><td>MiniMax</td><td>7</td><td>4</td><td>1</td><td>25%</td></tr><tr><td>xAI</td><td>4</td><td>1</td><td>0</td><td>0%</td></tr></tbody></table>
+<p class="muted">The model PlayPrompt ships as its default sits in the lower half of this table — stated plainly because hiding it would defeat the purpose of the study.</p>
 </section>
 
-<section id="discussion"><h2>5. Discussion</h2>
+<section id="discussion"><h2>Discussion</h2>
+<p>Read these as relative, conditional observations — "under this one prompt, this rubric, on this date" — not absolute capability claims.</p>
 <ul class="tight">
-<li><b>Three gates, all load-bearing.</b> Of 41 delivered games, only 23 were both correct and cleanly rendered. Failures split across invalid puzzles, broken input, and broken rendering — so evaluating generated software means <b>driving it and inspecting the pixels</b>, not just reading the code or trusting internal state.</li>
-<li><b>Cost did not predict quality.</b> The most expensive run produced an <i>invalid</i> puzzle; the cheapest clean game cost a fraction of a cent.</li>
-<li><b>Coding-tuned models over-perform for their price.</b> The fast, cheap clean games come disproportionately from vendors' coder variants.</li>
-<li><b>Spec interpretation varies.</b> Some models read "Sudoku" as a simplified 4×4 variant rather than the standard 9×9 — valid, but not what most users expect from one ambiguous sentence.</li>
-<li><b>Top tier is reliable end-to-end;</b> several smaller or older models deliver something that looks right but fails on play or on render.</li>
+<li><b>Three gates are all load-bearing.</b> Of 41 delivered games, only 23 were both correct and cleanly rendered. Failures split across invalid puzzles, broken input, and broken rendering, so evaluating generated software means driving it and inspecting it, not reading or trusting it.</li>
+<li><b>Cost did not predict quality.</b> The most expensive run produced an invalid puzzle; several of the cheapest games were clean. Buyers optimising for this kind of task should not assume the premium tier wins.</li>
+<li><b>Coding-tuned variants over-performed for their price.</b> The fast, cheap clean games came disproportionately from vendors' coder-oriented models, consistent with this being, underneath the theme, a code-generation task.</li>
+<li><b>Specification interpretation varies.</b> Given one ambiguous sentence, some models built a reduced 4×4 variant rather than standard 9×9 — valid, but not what most users expect. Single-sentence prompts leave real degrees of freedom.</li>
+<li><b>The top tier was reliable end-to-end; the long tail was not.</b> Several smaller or older models delivered something that looked right but failed on play or on render — the gap a one-glance demo would miss.</li>
 </ul>
 </section>
 
-<section id="limits"><h2>6. Limitations</h2>
-<ul class="tight">
-<li><b>Single prompt, single run per model.</b> LLM output is non-deterministic; a re-run may differ. This is a snapshot, not a leaderboard.</li>
-<li><b>Point in time</b> (2026-06-23). Model line-ups and quality move quickly.</li>
-<li><b>Costs are estimates</b> from published list prices applied to recorded tokens; actual pricing varies by region, tier and promotions.</li>
-<li><b>Feature counts are approximate</b> and not strictly comparable across games.</li>
-<li><b>Solution uniqueness was not uniformly enforced.</b> A proper Sudoku has exactly one solution; our bar for "clean" was a valid, winnable board. A few generators produce valid but non-unique puzzles (flagged ⚠); the same soft defect may exist undetected elsewhere.</li>
-<li><b>Visual QA inspects the board on load / after start</b>, not every difficulty level or animation.</li>
-</ul>
+<section id="threats"><h2>Threats to validity</h2>
+<h3>Construct</h3>
+<p>One Sudoku prompt is not a measure of general game-generation ability. The task is "produce a self-contained HTML game that satisfies a fixed formatting and configuration contract," so a verdict conflates Sudoku reasoning, HTML/JS coding, and contract-adherence. The automatic prompt-enhancement step and the configuration-block contract (both in <a href="#appendixB">Appendix&nbsp;B</a>) are confounds: a model marked failed may have mishandled the contract, not the puzzle.</p>
+<h3>Internal</h3>
+<p>One attempt per model; model outputs are non-deterministic, so a re-run may differ and small gaps may be run-to-run noise. The per-request enhanced brief varied per call and was not individually retained at run time (a logging gap we are closing). Some Stage-1 failures were rate-limits or timeouts — infrastructure, not capability — and are labelled as such. Stage-2 grading involves human/visual judgment.</p>
+<h3>External</h3>
+<p>Sudoku only; these specific model snapshots; this date. Hosted model endpoints drift over time, so exact numbers are not guaranteed to reproduce.</p>
+<h3>Conclusion</h3>
+<p>Small N, single run, no statistical significance testing or confidence intervals. Feature counts are approximate; some costs are estimates. We avoid significance claims.</p>
+<h3>Contamination</h3>
+<p>Sudoku is heavily represented in training data. This study measures generation and rendering of a familiar artifact under one framing, not novel reasoning, and small prompt changes can flip outcomes.</p>
 </section>
 
-<section id="repro"><h2>7. Reproducibility</h2>
-<ol class="tight">
-<li>Enumerate the current public text models for each vendor (the roster below).</li>
-<li>Give every model the same prompt — <code>create a sudoku game with jazz music.</code> — and capture the generated game, its generation time and token usage.</li>
-<li>For each game, run a headless-browser check that renders the board, validates the puzzle, drives the full solution to a recognized win, and screenshots the result.</li>
-<li>Estimate cost as recorded tokens × the model's published list price.</li>
+<section id="repro"><h2>Reproducibility &amp; artifacts</h2>
+<p>Everything needed to re-run or re-score this study is published here:</p>
+<ul class="tight">
+<li>The verbatim end-user prompt (above) and the full system / enhancement / configuration instructions (<a href="#appendixB">Appendix&nbsp;B</a>).</li>
+<li>Every generated game, playable: <a href="games/">/games/</a> (30 self-contained HTML files).</li>
+<li>Every screenshot: <a href="assets/">/assets/</a>.</li>
+<li>The per-model results as data: <a href="data/results.csv">results.csv</a> · <a href="data/results.json">results.json</a>.</li>
+<li>The full model roster and per-model outcomes (<a href="#appendixA">Appendix&nbsp;A</a>).</li>
+</ul>
+<p><b>To reproduce:</b> enumerate each vendor's current text models; send every model the same end-user sentence under identical generation settings; for each output, run a headless-browser check that renders the board, validates the puzzle, drives the solution to a win, and screenshots the result; price by recorded tokens × the vendor's published rate.</p>
+<p><b>Corrections welcome.</b> If you believe a model was mis-run, send a better prompt or a correction and we will re-run and update, recording the change here. This is v1.0 (run date 2026-06-23); material changes will be versioned and dated.</p>
+</section>
+
+<section id="appendixA"><h2>Appendix A — full roster &amp; per-model outcome</h2>
+<p class="muted">All 60 models, by vendor, with the Stage-1 outcome and (for delivered games) the final verdict. Infrastructure failures are labelled.</p>
+<h4>Anthropic <span class='muted'>(8 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>claude-fable-5</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>claude-haiku-4-5-20251001</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-5-20251101</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-6</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-7</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-8</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-sonnet-4-5-20250929</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>claude-sonnet-4-6</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>OpenAI <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>gpt-5.2</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.2-codex</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.2-pro</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>gpt-5.3-codex</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>gpt-5.4</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gpt-5.4-mini</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gpt-5.4-nano</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>gpt-5.4-pro</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.5</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.5-pro</code></td><td>did not deliver</td><td>—</td></tr></tbody></table><h4>Google <span class='muted'>(9 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>gemini-2.0-flash</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gemini-2.5-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-2.5-flash-lite</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-2.5-pro</code></td><td>delivered</td><td>not_sudoku</td></tr><tr><td><code>gemini-3-flash-preview</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-3-pro-preview</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gemini-3.1-flash-lite-preview</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>gemini-3.1-pro-preview</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-3.5-flash</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>xAI <span class='muted'>(4 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>grok-4.20-0309-non-reasoning</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>grok-4.20-0309-reasoning</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>grok-4.20-multi-agent-0309</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>grok-4.3</code></td><td>delivered</td><td>broken</td></tr></tbody></table><h4>DeepSeek <span class='muted'>(2 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>deepseek-v4-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>deepseek-v4-pro</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>Mistral <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>codestral-latest</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>devstral-latest</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>devstral-medium-latest</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>magistral-medium-latest</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>magistral-small-latest</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>ministral-14b-latest</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>ministral-8b-latest</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>mistral-large-2512</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>mistral-large-latest</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>mistral-small-latest</code></td><td>delivered</td><td>flawed</td></tr></tbody></table><h4>MiniMax <span class='muted'>(7 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>MiniMax-M2</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>MiniMax-M2.1</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>MiniMax-M2.5</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>MiniMax-M2.7</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>MiniMax-M2.7-highspeed</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>MiniMax-M3</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>MiniMax-Text-01</code></td><td>delivered</td><td>not_sudoku</td></tr></tbody></table><h4>Alibaba (Qwen) <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>qwen3-coder-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3-coder-next</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3-coder-plus</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>qwen3-vl-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.5-flash</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>qwen3.5-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.6-flash</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>qwen3.6-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.7-max</code></td><td>delivered</td><td>reduced</td></tr><tr><td><code>qwen3.7-plus</code></td><td>delivered</td><td>flawed</td></tr></tbody></table>
+</section>
+
+<section id="appendixB"><h2>Appendix B — the exact instruction the models received</h2>
+<p>For full transparency, the verbatim text PlayPrompt sends the model. The end-user sentence ("create a sudoku game with jazz music.") is expanded by the enhancement instruction below into the <i>user</i> message, and the generation system instruction below is sent as the <i>system</i> message. The music-generation and asset-generation prompts are separate post-steps and are out of scope. These were identical for all 60 models.</p>
+<h3>Generation system instruction</h3>
+<pre class="prompt long">You are a helpful assistant that creates simple, fun browser-based games for families (parents and children) to enjoy together.
+
+CRITICAL REQUIREMENTS:
+1. Generate ONLY complete, self-contained HTML files
+2. All CSS must be inline in &lt;style&gt; tags
+3. All JavaScript must be inline in &lt;script&gt; tags
+4. NO external libraries, NO CDN links, NO external resources
+5. Games must work on both desktop and mobile devices
+6. Use touch-friendly controls (large buttons, touch events)
+7. Keep games simple and appropriate for children
+8. Games should be small in scope (achievable in a single HTML file)
+9. EVERY game MUST have a title
+
+TITLE REQUIREMENTS:
+- If the user specifies a title in their prompt, use that exact title (if it&#x27;s child-safe)
+- If no title is specified, create an appropriate, descriptive title
+- Titles must be family-friendly and safe for children in any language
+- Titles should be short (2-6 words) and descriptive
+- The title should appear in the HTML &lt;title&gt; tag and prominently in the game UI
+
+OUTPUT FORMAT:
+You must respond with THREE parts:
+
+1. TITLE: The game title (required)
+2. FEEDBACK: A friendly, conversational message explaining what you created (2-3 sentences)
+3. CODE: The complete HTML game code
+
+Format your response exactly like this:
+---TITLE---
+[Game title here]
+---FEEDBACK---
+[Your friendly explanation here]
+---CODE---
+[Complete HTML code here]
+
+GAME CHARACTERISTICS:
+- Simple mechanics (e.g., click games, simple puzzles, basic arcade games)
+- Colorful and engaging visuals using CSS
+- Clear instructions within the game
+- Family-friendly content only
+- Mobile-responsive design
+- File size under 100KB
+
+Remember: Create games that parents and children can enjoy together!
+
+## GAME_CONFIG block — externalise every tunable (MANDATORY)
+Players will later tweak this game (&#x27;make it faster&#x27;, &#x27;change the colours&#x27;, &#x27;give it more lives&#x27;, &#x27;use a dog instead of a cat&#x27;) by editing a single settings object — NOT by rewriting code. So you MUST collect every tunable value into one ``GAME_CONFIG`` object at the very TOP of your inline ``&lt;script&gt;``, wrapped in these EXACT marker comments:
+
+```javascript
+// [PP_CONFIG_INJECT]
+const GAME_CONFIG = {
+  &quot;theme&quot;: { &quot;title&quot;: &quot;Star Hopper&quot;, &quot;background&quot;: &quot;#0d1b2a&quot;, &quot;player&quot;: &quot;#ffd166&quot;, &quot;accent&quot;: &quot;#06d6a0&quot; },
+  &quot;moveSpeed&quot;: 240,        // numbers a player might tune (speed, gravity, spawnRate)
+  &quot;lives&quot;: 3,              // counts (lives, rounds, targets)
+  &quot;spawnRate&quot;: 1.0,
+  &quot;assets&quot;: { &quot;player_sprite&quot;: null, &quot;background_image&quot;: null }  // image slots (null = drawn procedurally)
+};
+if (typeof window !== &#x27;undefined&#x27;) { window.GAME_CONFIG = GAME_CONFIG; }
+// [/PP_CONFIG_INJECT]
+```
+
+Rules:
+- Put the block FIRST, before the CONSTANTS block. The markers must be written EXACTLY as shown (the platform reads them to enable settings-only edits).
+- READ every tunable from GAME_CONFIG into your CONSTANTS, with a fallback, e.g. ``const MOVE_SPEED = (GAME_CONFIG.moveSpeed || 240);`` and ``const TITLE = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.title) || &#x27;My Game&#x27;;``. Never hard-code a colour, speed, count, or title that a player might reasonably want to change.
+- ``theme`` holds the title plus the main colours (hex strings). Numeric knobs (speed, gravity, spawn rate, lives, durations, counts) are top-level numbers.
+- ``assets`` maps slot names to ``null``. When a slot is null, DRAW that thing procedurally with canvas shapes (the platform may later fill the slot with a generated image data-URI; if ``GAME_CONFIG.assets.player_sprite`` is a string, draw it as an image instead).
+- This is in ADDITION to the CONSTANTS contract: GAME_CONFIG holds the USER-tunable values; the CONSTANTS block reads them and adds the rest.
+
+### RENDER YOUR SLOTS (MANDATORY — declared art that isn&#x27;t drawn is wasted)
+The platform generates an image for EVERY slot you declare in ``assets`` and injects it as a data-URI. If your draw code never READS that slot, the generated art is INVISIBLE and the work is thrown away. Therefore:
+- For EVERY slot you declare in ``assets`` you MUST load it from ``GAME_CONFIG.assets.&lt;slot&gt;`` into an ``Image`` and DRAW it in your render loop, with a PROCEDURAL fallback for when the slot is ``null``.
+- NEVER declare a slot you do not render. If you&#x27;ll draw something purely procedurally, DON&#x27;T put it in ``assets`` at all.
+- STRONGLY PREFER declaring a ``background_image`` slot (highest visual impact, easiest to render reliably) plus AT MOST 1-2 character/player sprites you will actually draw. Don&#x27;t over-declare.
+
+COPY-PASTE boilerplate — background_image (declare the loader once, near your CONSTANTS):
+```javascript
+const bgImg = new Image();
+if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.background_image) {
+  bgImg.src = GAME_CONFIG.assets.background_image;
+}
+// ...inside your draw loop, FIRST thing each frame:
+if (bgImg.complete &amp;&amp; bgImg.naturalWidth) {
+  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+} else {
+  // procedural background fallback (e.g. fill with GAME_CONFIG.theme.background)
+  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.background) || &#x27;#0d1b2a&#x27;;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+```
+
+COPY-PASTE boilerplate — a sprite (e.g. player_sprite); same shape for any sprite slot:
+```javascript
+const playerImg = new Image();
+if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.player_sprite) {
+  playerImg.src = GAME_CONFIG.assets.player_sprite;
+}
+// ...where you draw the player (x, y, w, h are the player&#x27;s box):
+if (playerImg.complete &amp;&amp; playerImg.naturalWidth) {
+  ctx.drawImage(playerImg, x, y, w, h);
+} else {
+  // procedural shape fallback
+  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.player) || &#x27;#ffd166&#x27;;
+  ctx.fillRect(x, y, w, h);
+}
+```
+The ``.complete &amp;&amp; .naturalWidth`` guard is REQUIRED: it draws the image once it has loaded and the procedural fallback until then (and forever if the slot stays null), so the game looks right in BOTH states.
+</pre>
+<h3>Configuration-block contract (appended to the system instruction)</h3>
+<pre class="prompt long">## GAME_CONFIG block — externalise every tunable (MANDATORY)
+Players will later tweak this game (&#x27;make it faster&#x27;, &#x27;change the colours&#x27;, &#x27;give it more lives&#x27;, &#x27;use a dog instead of a cat&#x27;) by editing a single settings object — NOT by rewriting code. So you MUST collect every tunable value into one ``GAME_CONFIG`` object at the very TOP of your inline ``&lt;script&gt;``, wrapped in these EXACT marker comments:
+
+```javascript
+// [PP_CONFIG_INJECT]
+const GAME_CONFIG = {
+  &quot;theme&quot;: { &quot;title&quot;: &quot;Star Hopper&quot;, &quot;background&quot;: &quot;#0d1b2a&quot;, &quot;player&quot;: &quot;#ffd166&quot;, &quot;accent&quot;: &quot;#06d6a0&quot; },
+  &quot;moveSpeed&quot;: 240,        // numbers a player might tune (speed, gravity, spawnRate)
+  &quot;lives&quot;: 3,              // counts (lives, rounds, targets)
+  &quot;spawnRate&quot;: 1.0,
+  &quot;assets&quot;: { &quot;player_sprite&quot;: null, &quot;background_image&quot;: null }  // image slots (null = drawn procedurally)
+};
+if (typeof window !== &#x27;undefined&#x27;) { window.GAME_CONFIG = GAME_CONFIG; }
+// [/PP_CONFIG_INJECT]
+```
+
+Rules:
+- Put the block FIRST, before the CONSTANTS block. The markers must be written EXACTLY as shown (the platform reads them to enable settings-only edits).
+- READ every tunable from GAME_CONFIG into your CONSTANTS, with a fallback, e.g. ``const MOVE_SPEED = (GAME_CONFIG.moveSpeed || 240);`` and ``const TITLE = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.title) || &#x27;My Game&#x27;;``. Never hard-code a colour, speed, count, or title that a player might reasonably want to change.
+- ``theme`` holds the title plus the main colours (hex strings). Numeric knobs (speed, gravity, spawn rate, lives, durations, counts) are top-level numbers.
+- ``assets`` maps slot names to ``null``. When a slot is null, DRAW that thing procedurally with canvas shapes (the platform may later fill the slot with a generated image data-URI; if ``GAME_CONFIG.assets.player_sprite`` is a string, draw it as an image instead).
+- This is in ADDITION to the CONSTANTS contract: GAME_CONFIG holds the USER-tunable values; the CONSTANTS block reads them and adds the rest.
+
+### RENDER YOUR SLOTS (MANDATORY — declared art that isn&#x27;t drawn is wasted)
+The platform generates an image for EVERY slot you declare in ``assets`` and injects it as a data-URI. If your draw code never READS that slot, the generated art is INVISIBLE and the work is thrown away. Therefore:
+- For EVERY slot you declare in ``assets`` you MUST load it from ``GAME_CONFIG.assets.&lt;slot&gt;`` into an ``Image`` and DRAW it in your render loop, with a PROCEDURAL fallback for when the slot is ``null``.
+- NEVER declare a slot you do not render. If you&#x27;ll draw something purely procedurally, DON&#x27;T put it in ``assets`` at all.
+- STRONGLY PREFER declaring a ``background_image`` slot (highest visual impact, easiest to render reliably) plus AT MOST 1-2 character/player sprites you will actually draw. Don&#x27;t over-declare.
+
+COPY-PASTE boilerplate — background_image (declare the loader once, near your CONSTANTS):
+```javascript
+const bgImg = new Image();
+if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.background_image) {
+  bgImg.src = GAME_CONFIG.assets.background_image;
+}
+// ...inside your draw loop, FIRST thing each frame:
+if (bgImg.complete &amp;&amp; bgImg.naturalWidth) {
+  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+} else {
+  // procedural background fallback (e.g. fill with GAME_CONFIG.theme.background)
+  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.background) || &#x27;#0d1b2a&#x27;;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+```
+
+COPY-PASTE boilerplate — a sprite (e.g. player_sprite); same shape for any sprite slot:
+```javascript
+const playerImg = new Image();
+if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.player_sprite) {
+  playerImg.src = GAME_CONFIG.assets.player_sprite;
+}
+// ...where you draw the player (x, y, w, h are the player&#x27;s box):
+if (playerImg.complete &amp;&amp; playerImg.naturalWidth) {
+  ctx.drawImage(playerImg, x, y, w, h);
+} else {
+  // procedural shape fallback
+  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.player) || &#x27;#ffd166&#x27;;
+  ctx.fillRect(x, y, w, h);
+}
+```
+The ``.complete &amp;&amp; .naturalWidth`` guard is REQUIRED: it draws the image once it has loaded and the procedural fallback until then (and forever if the slot stays null), so the game looks right in BOTH states.
+</pre>
+<h3>Prompt-enhancement instruction (expands the end-user sentence into the user message)</h3>
+<pre class="prompt long">You are a creative game designer who expands brief game ideas into detailed, buildable game concepts.
+
+Given a short user prompt, produce a rich game concept document covering:
+- Game title (short, catchy, 2-6 words)
+- Genre and core mechanic
+- Visual design (color palette, art style, overall look and feel)
+- Key game elements (player character, enemies/obstacles, collectibles, scoring)
+- Difficulty and progression (how it gets harder, win/lose conditions)
+- Special features (animations, sound cues described as visual effects, particle effects)
+
+CONSTRAINTS:
+- The game MUST be realistic for a single self-contained HTML file (inline CSS + JS only)
+- No external libraries, CDN links, or assets — everything is drawn with CSS/canvas/SVG
+- Keep scope small: one core mechanic, one screen, simple controls
+- Target both desktop (keyboard) and mobile (touch) controls
+- Content must be family-friendly and safe for children
+
+OUTPUT:
+Write a clear, detailed plain text description. Do NOT use delimiters, code blocks, or structured formatting — just flowing prose that a game developer can use as a specification. Keep it under 300 words.</pre>
+</section>
+
+<section id="refs"><h2>References</h2>
+<ol class="refs">
+<li>Singh et al. (2025). <i>The Leaderboard Illusion.</i> arXiv:2504.20879 — <a href="https://arxiv.org/abs/2504.20879" target="_blank" rel="noopener">arxiv.org/abs/2504.20879</a></li>
+<li>DeepSource. <i>Every AI code-review vendor benchmarks itself, and wins.</i> <a href="https://deepsource.com/blog/ai-code-review-benchmarks" target="_blank" rel="noopener">deepsource.com/blog/ai-code-review-benchmarks</a></li>
+<li>Willison, S. (2025). <i>Pelican on a bicycle — one-shot SVG across models.</i> <a href="https://simonwillison.net/2025/Jun/6/six-months-in-llms/" target="_blank" rel="noopener">simonwillison.net</a></li>
+<li>Artificial Analysis. <i>Intelligence Index methodology.</i> <a href="https://artificialanalysis.ai/methodology/intelligence-benchmarking" target="_blank" rel="noopener">artificialanalysis.ai</a></li>
+<li>Aider. <i>Polyglot coding leaderboard.</i> <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">aider.chat/docs/leaderboards</a></li>
+<li>Epoch AI. <i>Benchmarking hub.</i> <a href="https://epoch.ai/benchmarks/about" target="_blank" rel="noopener">epoch.ai/benchmarks/about</a></li>
+<li>Si et al. (2024). <i>Design2Code.</i> arXiv:2403.03163 — <a href="https://arxiv.org/abs/2403.03163" target="_blank" rel="noopener">arxiv.org/abs/2403.03163</a></li>
 </ol>
-</section>
-
-<section id="appendix"><h2>Appendix — full model roster &amp; outcome</h2>
-<p class="disclaimer">All 60 models tested, by vendor, with the Stage-1 outcome (and, for delivered games, the final verdict where space allows).</p>
-<h3>Anthropic <span class='disclaimer'>(8 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>claude-fable-5</code></td><td>did not deliver</td></tr><tr><td><code>claude-haiku-4-5-20251001</code></td><td>delivered</td></tr><tr><td><code>claude-opus-4-5-20251101</code></td><td>delivered</td></tr><tr><td><code>claude-opus-4-6</code></td><td>delivered</td></tr><tr><td><code>claude-opus-4-7</code></td><td>delivered</td></tr><tr><td><code>claude-opus-4-8</code></td><td>delivered</td></tr><tr><td><code>claude-sonnet-4-5-20250929</code></td><td>delivered</td></tr><tr><td><code>claude-sonnet-4-6</code></td><td>delivered</td></tr></tbody></table><h3>OpenAI <span class='disclaimer'>(10 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>gpt-5.2</code></td><td>did not deliver</td></tr><tr><td><code>gpt-5.2-codex</code></td><td>did not deliver</td></tr><tr><td><code>gpt-5.2-pro</code></td><td>delivered</td></tr><tr><td><code>gpt-5.3-codex</code></td><td>delivered</td></tr><tr><td><code>gpt-5.4</code></td><td>delivered</td></tr><tr><td><code>gpt-5.4-mini</code></td><td>delivered</td></tr><tr><td><code>gpt-5.4-nano</code></td><td>rejected (invalid output)</td></tr><tr><td><code>gpt-5.4-pro</code></td><td>did not deliver</td></tr><tr><td><code>gpt-5.5</code></td><td>did not deliver</td></tr><tr><td><code>gpt-5.5-pro</code></td><td>did not deliver</td></tr></tbody></table><h3>Google <span class='disclaimer'>(9 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>gemini-2.0-flash</code></td><td>did not deliver</td></tr><tr><td><code>gemini-2.5-flash</code></td><td>delivered</td></tr><tr><td><code>gemini-2.5-flash-lite</code></td><td>delivered</td></tr><tr><td><code>gemini-2.5-pro</code></td><td>delivered</td></tr><tr><td><code>gemini-3-flash-preview</code></td><td>delivered</td></tr><tr><td><code>gemini-3-pro-preview</code></td><td>did not deliver</td></tr><tr><td><code>gemini-3.1-flash-lite-preview</code></td><td>delivered</td></tr><tr><td><code>gemini-3.1-pro-preview</code></td><td>delivered</td></tr><tr><td><code>gemini-3.5-flash</code></td><td>delivered</td></tr></tbody></table><h3>xAI <span class='disclaimer'>(4 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>grok-4.20-0309-non-reasoning</code></td><td>rejected (invalid output)</td></tr><tr><td><code>grok-4.20-0309-reasoning</code></td><td>rejected (invalid output)</td></tr><tr><td><code>grok-4.20-multi-agent-0309</code></td><td>did not deliver</td></tr><tr><td><code>grok-4.3</code></td><td>delivered</td></tr></tbody></table><h3>Deepseek <span class='disclaimer'>(2 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>deepseek-v4-flash</code></td><td>delivered</td></tr><tr><td><code>deepseek-v4-pro</code></td><td>delivered</td></tr></tbody></table><h3>Mistral <span class='disclaimer'>(10 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>codestral-latest</code></td><td>delivered</td></tr><tr><td><code>devstral-latest</code></td><td>delivered</td></tr><tr><td><code>devstral-medium-latest</code></td><td>delivered</td></tr><tr><td><code>magistral-medium-latest</code></td><td>did not deliver</td></tr><tr><td><code>magistral-small-latest</code></td><td>delivered</td></tr><tr><td><code>ministral-14b-latest</code></td><td>rejected (invalid output)</td></tr><tr><td><code>ministral-8b-latest</code></td><td>rejected (invalid output)</td></tr><tr><td><code>mistral-large-2512</code></td><td>delivered</td></tr><tr><td><code>mistral-large-latest</code></td><td>delivered</td></tr><tr><td><code>mistral-small-latest</code></td><td>delivered</td></tr></tbody></table><h3>MiniMax <span class='disclaimer'>(7 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>MiniMax-M2</code></td><td>delivered</td></tr><tr><td><code>MiniMax-M2.1</code></td><td>rejected (invalid output)</td></tr><tr><td><code>MiniMax-M2.5</code></td><td>rejected (invalid output)</td></tr><tr><td><code>MiniMax-M2.7</code></td><td>delivered</td></tr><tr><td><code>MiniMax-M2.7-highspeed</code></td><td>delivered</td></tr><tr><td><code>MiniMax-M3</code></td><td>did not deliver</td></tr><tr><td><code>MiniMax-Text-01</code></td><td>delivered</td></tr></tbody></table><h3>Alibaba (Qwen) <span class='disclaimer'>(10 models)</span></h3><table><thead><tr><th>Model</th><th>Outcome</th></tr></thead><tbody><tr><td><code>qwen3-coder-flash</code></td><td>delivered → correct</td></tr><tr><td><code>qwen3-coder-next</code></td><td>delivered → correct</td></tr><tr><td><code>qwen3-coder-plus</code></td><td>rejected (invalid output)</td></tr><tr><td><code>qwen3-vl-plus</code></td><td>delivered → correct</td></tr><tr><td><code>qwen3.5-flash</code></td><td>delivered → flawed</td></tr><tr><td><code>qwen3.5-plus</code></td><td>delivered → correct</td></tr><tr><td><code>qwen3.6-flash</code></td><td>delivered → broken</td></tr><tr><td><code>qwen3.6-plus</code></td><td>delivered → correct</td></tr><tr><td><code>qwen3.7-max</code></td><td>delivered → reduced</td></tr><tr><td><code>qwen3.7-plus</code></td><td>delivered → flawed</td></tr></tbody></table>
+<p class="muted">Cost figures use each vendor's published list prices, accessed 2026-06-23. Model and product names are used to identify the systems tested.</p>
 </section>
 
 <section id="about" class="about"><h2>About PlayPrompt</h2>
-<p>Every game in this study was created with <b>PlayPrompt</b> — an agentic AI platform that turns a single text prompt into a complete, ready-to-play browser game, generating the gameplay, the music, and, when needed, the visual assets. In this study we swapped only the underlying text model; the music, assembly and packaging into a playable page were PlayPrompt throughout.</p>
-<p><b>Describe a game, get a game you can play.</b> The 30 playable links above are real PlayPrompt output, soundtrack and all.</p>
+<p>This study was produced by <b>PlayPrompt</b>, an agentic AI platform that turns a single prompt into a complete, ready-to-play browser game — generating the gameplay, the music, and, when needed, the visual assets. In this study only the underlying text model was varied; the enhancement, packaging, and soundtrack were identical across all 60 models. The 30 playable links above are real platform output.</p>
 </section>
 
 <section id="disclaimer"><h2>Disclaimer</h2>
-<p class="disclaimer">This is an independent, point-in-time benchmark for informational purposes. It reflects single-prompt, single-run results on the date shown and is not a comprehensive evaluation of any model or vendor. All product and model names are trademarks of their respective owners; PlayPrompt is not affiliated with, sponsored by, or endorsed by any of them, and names are used solely to identify the models tested. Costs are estimates derived from published list prices and may not reflect current pricing. Results may not reproduce exactly due to model non-determinism. Findings describe the behavior of specific generated games in this test, not a general judgment of any company. Provided "as is", without warranty.</p>
+<p class="muted">Independent, point-in-time study for informational purposes; single prompt, single run per model, on the date shown. Not a comprehensive evaluation of any model or vendor. Claude, GPT, Gemini, Grok, DeepSeek, Qwen, MiniMax, Mistral and other names are trademarks of their respective owners, used nominatively to identify the systems tested; PlayPrompt is independent and is not affiliated with, sponsored by, or endorsed by any of them. Costs are estimates from published list prices and may not reflect current pricing. Results may not reproduce exactly due to model non-determinism. Findings describe specific generated artifacts in this test, not a general judgment of any company. Provided "as is", without warranty.</p>
 </section>
 
 </main>
-<footer class="wrap"><p>© 2026 PlayPrompt · Independent model benchmark · 41 games generated, 30 published as playable.</p></footer>
+<footer class="wrap"><p>Independent generation study · v1.0 · run date 2026-06-23 · 41 games generated, 30 published as playable · produced by PlayPrompt.</p></footer>
 </body></html>

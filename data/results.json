@@ -1,0 +1,482 @@
+[
+ {
+  "vendor": "Anthropic",
+  "model": "claude-fable-5",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 1,
+  "game": ""
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 46,
+  "game": "games/claude-haiku-4-5-20251001.html"
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-opus-4-5-20251101",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 108,
+  "game": "games/claude-opus-4-5-20251101.html"
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-opus-4-6",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 151,
+  "game": "games/claude-opus-4-6.html"
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-opus-4-7",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 148,
+  "game": "games/claude-opus-4-7.html"
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-opus-4-8",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 102,
+  "game": "games/claude-opus-4-8.html"
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-sonnet-4-5-20250929",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 142,
+  "game": ""
+ },
+ {
+  "vendor": "Anthropic",
+  "model": "claude-sonnet-4-6",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 131,
+  "game": "games/claude-sonnet-4-6.html"
+ },
+ {
+  "vendor": "DeepSeek",
+  "model": "deepseek-v4-flash",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 122,
+  "game": "games/deepseek-deepseek-v4-flash.html"
+ },
+ {
+  "vendor": "DeepSeek",
+  "model": "deepseek-v4-pro",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 366,
+  "game": "games/deepseek-deepseek-v4-pro.html"
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-2.0-flash",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 1,
+  "game": ""
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-2.5-flash",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 47,
+  "game": "games/gemini-gemini-2-5-flash.html"
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-2.5-flash-lite",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 36,
+  "game": "games/gemini-gemini-2-5-flash-lite.html"
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-2.5-pro",
+  "stage1": "delivered",
+  "verdict": "not_sudoku",
+  "gen_seconds": 65,
+  "game": ""
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-3-flash-preview",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 35,
+  "game": "games/gemini-gemini-3-flash-preview.html"
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-3-pro-preview",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 2,
+  "game": ""
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-3.1-flash-lite-preview",
+  "stage1": "delivered",
+  "verdict": "broken",
+  "gen_seconds": 9,
+  "game": ""
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-3.1-pro-preview",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 99,
+  "game": "games/gemini-gemini-3-1-pro-preview.html"
+ },
+ {
+  "vendor": "Google",
+  "model": "gemini-3.5-flash",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 76,
+  "game": "games/gemini-gemini-3-5-flash.html"
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M2",
+  "stage1": "delivered",
+  "verdict": "broken",
+  "gen_seconds": 60,
+  "game": ""
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M2.1",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 62,
+  "game": ""
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M2.5",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 47,
+  "game": ""
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M2.7",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 269,
+  "game": ""
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M2.7-highspeed",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 165,
+  "game": "games/minimax-minimax-m2-7-highspeed.html"
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-M3",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 627,
+  "game": ""
+ },
+ {
+  "vendor": "MiniMax",
+  "model": "MiniMax-Text-01",
+  "stage1": "delivered",
+  "verdict": "not_sudoku",
+  "gen_seconds": 115,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "codestral-latest",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 44,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "devstral-latest",
+  "stage1": "delivered",
+  "verdict": "broken",
+  "gen_seconds": 227,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "devstral-medium-latest",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 130,
+  "game": "games/mistral-devstral-medium-latest.html"
+ },
+ {
+  "vendor": "Mistral",
+  "model": "magistral-medium-latest",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 557,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "magistral-small-latest",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 49,
+  "game": "games/mistral-magistral-small-latest.html"
+ },
+ {
+  "vendor": "Mistral",
+  "model": "ministral-14b-latest",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 94,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "ministral-8b-latest",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 79,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "mistral-large-2512",
+  "stage1": "delivered",
+  "verdict": "correct",
+  "gen_seconds": 86,
+  "game": "games/mistral-mistral-large-2512.html"
+ },
+ {
+  "vendor": "Mistral",
+  "model": "mistral-large-latest",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 123,
+  "game": ""
+ },
+ {
+  "vendor": "Mistral",
+  "model": "mistral-small-latest",
+  "stage1": "delivered",
+  "verdict": "correct",
+  "gen_seconds": 35,
+  "game": "games/mistral-mistral-small-latest.html"
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.2",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 3,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.2-codex",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 2,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.2-pro",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 468,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.3-codex",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 90,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.4",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 89,
+  "game": "games/gpt-5-4.html"
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.4-mini",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 46,
+  "game": "games/gpt-5-4-mini.html"
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.4-nano",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 117,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.4-pro",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 755,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.5",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 3,
+  "game": ""
+ },
+ {
+  "vendor": "OpenAI",
+  "model": "gpt-5.5-pro",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 492,
+  "game": ""
+ },
+ {
+  "vendor": "xAI",
+  "model": "grok-4.20-0309-non-reasoning",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 37,
+  "game": ""
+ },
+ {
+  "vendor": "xAI",
+  "model": "grok-4.20-0309-reasoning",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 91,
+  "game": ""
+ },
+ {
+  "vendor": "xAI",
+  "model": "grok-4.20-multi-agent-0309",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 2,
+  "game": ""
+ },
+ {
+  "vendor": "xAI",
+  "model": "grok-4.3",
+  "stage1": "delivered",
+  "verdict": "correct",
+  "gen_seconds": 34,
+  "game": "games/xai-grok-4-3.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3-coder-flash",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 68,
+  "game": "games/qwen3-coder-flash.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3-coder-next",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 37,
+  "game": "games/qwen3-coder-next.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3-coder-plus",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 67,
+  "game": ""
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3-vl-plus",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 128,
+  "game": "games/qwen3-vl-plus.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.5-flash",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 62,
+  "game": "games/qwen3-5-flash.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.5-plus",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 198,
+  "game": "games/qwen3-5-plus.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.6-flash",
+  "stage1": "delivered",
+  "verdict": "broken",
+  "gen_seconds": 91,
+  "game": "games/qwen3-6-flash.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.6-plus",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 245,
+  "game": "games/qwen3-6-plus.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.7-max",
+  "stage1": "delivered",
+  "verdict": "reduced",
+  "gen_seconds": 220,
+  "game": "games/qwen3-7-max.html"
+ },
+ {
+  "vendor": "Alibaba (Qwen)",
+  "model": "qwen3.7-plus",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 233,
+  "game": "games/qwen3-7-plus.html"
+ }
+]
