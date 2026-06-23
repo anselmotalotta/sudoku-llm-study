@@ -32,7 +32,7 @@ HEADING: The test
 Every model got the identical prompt under identical conditions; the only thing that changed from run to run was the model. Then each result was loaded in a real browser and put through three checks: does it draw a 9×9 grid, is the puzzle it builds actually valid, and can you fill it in and have the game recognise a win? We logged the time and the cost for every one.
 
 HEADING: What the results show
-Of the seventy-two models, fifty-one returned a working game, and twenty-nine produced a Sudoku that was both correct and cleanly rendered. One built a perfectly valid but shrunken 4×4 board; the rest were unsolvable, broken, or — in a few memorable cases — not Sudoku at all. So a little over a third nailed it cold, on the first try. Three things in that result are worth lingering on.
+Of the seventy-two models, fifty-one returned a working game, and twenty-nine produced a Sudoku that was both correct and cleanly rendered. One built a perfectly valid but shrunken 4×4 board; the rest were unsolvable, broken, or — in a few memorable cases — not Sudoku at all. So roughly two in five nailed it cold, on the first try. Three things in that result are worth lingering on.
 **Looking right and working right are different skills, and models flunk them independently.** My favourite failure of the whole study: one model wrote a flawless solver and a flawless win-check, and then drew absolutely nothing — the page loaded with no grid on it at all. Inspect only the code or the program's internal state and it sails through; one screenshot and the illusion collapses. The opposite was just as common, a crisp, well-styled grid wrapped around a puzzle with repeated digits and no solution. The takeaway is unglamorous but important: if you're shipping AI-written software, reading the code or trusting the model's own summary won't save you. You have to run it and look at it.
 
 IMAGE 1: upload img-1.png
@@ -47,7 +47,7 @@ After seventy-two attempts, the honest shortlist:
   - **Best value — glm-4.5-flash (Z.ai).** A genuinely *free* model that still produced a clean, valid 9×9. You can't beat free, and it worked — with Google's gemini-2.5-flash-lite ($0.004) and Qwen's coder models close behind.
   - **Fastest — gemini-3-flash-preview,** a playable board in 35 seconds flat.
   - **Most complete — gpt-5.4,** which turned up with the deepest feature set: difficulty levels, notes, hints, the works.
-  - **Most dependable — Anthropic, Google and DeepSeek,** whose models almost always rendered correctly when they delivered; Zhipu's GLM line was close, at four clean games from five.
+  - **Most dependable — DeepSeek, Anthropic and Zhipu,** which almost always rendered correctly when they delivered — clean rates of 100%, 86% and 80% — with Google close behind at 71%.
 
 
 IMAGE 2: upload img-2.png
