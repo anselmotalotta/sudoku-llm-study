@@ -10,6 +10,7 @@ LinkedIn's article editor has no Markdown. On the home feed choose "Write articl
 
 We gave 72 AI models one Sudoku to build — and the cheapest one won
 *Ten vendors, one lazy sentence, and a great deal of confidence — some of it earned, some of it pure bluff. The cheapest model that actually worked turned out to be free. Here is who can turn a prompt into a working game, and who only looks the part.*
+*A point-in-time snapshot — study run on 23 June 2026.*
 Every AI lab will tell you its models can code. Of course they will. The more interesting question is what happens when the rubber meets the road: hand a model a vague human request and ask it for something that actually runs. Most benchmarks won't tell you, because they're either invisible — you get a score, not the work — or so abstract they look nothing like building a thing a person would use. So we ran a small, slightly mischievous experiment instead. We gave seventy-two models, from ten vendors, the same throwaway sentence — *create a sudoku game with jazz music.* — and watched to see who came back with a real, playable game and who came back with something that only looked the part.
 Sudoku is a wonderful instrument for this, precisely because it's so unglamorous. Everyone knows it, it has no graphics or physics to hide behind, and "correct" isn't a matter of taste: a grid either holds a valid puzzle you can solve to a genuine win, or it doesn't. That clean line lets us pull apart two things that usually travel together — *does it look like a Sudoku* and *is it a working Sudoku* — and the gap between them turned out to be the best part of the whole exercise.
 
@@ -56,7 +57,7 @@ Caption: Jazz Sudoku Squares, from gemini-2.5-flash-lite — a correct, playable
 The practical upshot writes itself. For everyday, well-specified generation — which is most of the work most of us do — the cheap, fast tier is the smart default, and the coding-tuned models are an outright steal. Save the expensive flagships for the genuinely hard, genuinely novel problems where their reasoning earns its keep. On a job like this, that premium mostly buys you a longer wait and the occasional wrong answer.
 
 HEADING: The fine print
-This is one prompt, run once per model, on one day. Line-ups shift fast, the same model can answer differently next time, and Sudoku is well-worn ground in training data — so think of this as how reliably a familiar program gets built and rendered, not a test of fresh reasoning. A snapshot, not a scoreboard.
+This is one prompt, run once per model, on a single day — 23 June 2026. Line-ups shift fast, the same model can answer differently next time, and Sudoku is well-worn ground in training data — so think of this as how reliably a familiar program gets built and rendered, not a test of fresh reasoning. A snapshot, not a scoreboard.
 
 HEADING: See for yourself
 Every one of these runs in your browser right now:
