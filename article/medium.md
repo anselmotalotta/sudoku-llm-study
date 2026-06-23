@@ -1,68 +1,70 @@
-# Sixty AI models, one Sudoku, and the gap between plausible and correct
+# We gave 60 AI models one Sudoku to build — and the cheapest one won
 
-Every major AI lab now sells its models as capable programmers. The claim is hard to check, because most coding benchmarks are either invisible — you see a score, not the work — or abstract, with no resemblance to building something a person would actually use. We wanted a test that was concrete, that anyone could inspect, and where "correct" is not a matter of taste. So we gave sixty models, from eight vendors, one small but complete job: write a playable Sudoku from a single sentence — *create a sudoku game with jazz music.* — and then checked, mechanically, whether each one worked.
+*Eight vendors, one lazy sentence, and a great deal of confidence — some of it earned, some of it pure bluff. Here is who can actually turn a prompt into a working game, and who just looks the part.*
 
-Sudoku suits the purpose. It is universally familiar, it has no graphics, physics or real-time behaviour to muddy the result, and its correctness is fully decidable: a grid either holds a valid puzzle that can be solved to a recognised win, or it does not. That lets us separate two questions that are usually tangled together — *does it look like a Sudoku* and *is it a working Sudoku* — and the distance between them turned out to be the most interesting part of the exercise.
+Every AI lab will tell you its models can code. Of course they will. The more interesting question is what happens when the rubber meets the road: hand a model a vague human request and ask it for something that actually runs. Most benchmarks won't tell you, because they're either invisible — you get a score, not the work — or so abstract they look nothing like building a thing a person would use. So we ran a small, slightly mischievous experiment instead. We gave sixty models, from eight vendors, the same throwaway sentence — *create a sudoku game with jazz music.* — and watched to see who came back with a real, playable game and who came back with something that only looked the part.
+
+Sudoku is a wonderful instrument for this, precisely because it's so unglamorous. Everyone knows it, it has no graphics or physics to hide behind, and "correct" isn't a matter of taste: a grid either holds a valid puzzle you can solve to a genuine win, or it doesn't. That clean line lets us pull apart two things that usually travel together — *does it look like a Sudoku* and *is it a working Sudoku* — and the gap between them turned out to be the best part of the whole exercise.
 
 ## The field
 
-The eight vendors, and the model classes each brought:
+Here is everyone who showed up, and the model classes each vendor brought to the table:
 
-- **Anthropic (Claude).** A large, reasoning-oriented Opus tier and a small, fast Haiku tier. A reputation for careful code, and among the most expensive options.
-- **OpenAI (GPT).** The GPT-5 family, from a heavyweight "pro" model down to mini and nano sizes, plus a codex variant tuned for programming. The most widely used, and costly at the top.
-- **Google (Gemini).** A Pro flagship alongside Flash and Flash-Lite tiers built for low latency and low cost.
-- **xAI (Grok).** The Grok-4 reasoning models — the newest line in the group.
-- **DeepSeek.** The V4 family: inexpensive, broadly available, and unusually strong on code for the price.
-- **Mistral.** A Large flagship, two coding-specialised models (Codestral and Devstral), and small Ministral models. Built around efficiency.
-- **MiniMax.** The M-series, distinguished by long context windows and low pricing.
-- **Alibaba (Qwen).** The broadest and cheapest range here: a Max flagship, Plus and Flash tiers, and a dedicated Coder line.
+- **Anthropic (Claude).** A large, reasoning-heavy Opus tier and a small, quick Haiku tier. Famous for careful code; sits near the top of the price list.
+- **OpenAI (GPT).** The GPT-5 family, from a heavyweight "pro" down to mini and nano sizes, plus a codex variant built for programming. The household name, and pricey at the top.
+- **Google (Gemini).** A Pro flagship next to the Flash and Flash-Lite tiers, engineered for speed and a tiny bill.
+- **xAI (Grok).** The Grok-4 reasoning models — the youngest line in the room.
+- **DeepSeek.** The V4 family: cheap, widely available, and a quiet overachiever on code.
+- **Mistral.** A Large flagship, two coding specialists (Codestral and Devstral), and small Ministral models. The lean European entry.
+- **MiniMax.** The M-series, built around long context windows and low prices.
+- **Alibaba (Qwen).** The biggest, cheapest spread of the lot: a Max flagship, Plus and Flash tiers, and a dedicated Coder line.
 
-The natural expectation is that a coding task rewards the largest, most expensive, most capable models. Whether it actually does is the question worth answering.
+The obvious bet is that a coding task rewards the biggest, most expensive, most capable models. It's a reasonable bet. It's also, as it turns out, wrong — and watching it fall apart is the fun of this.
 
 ## The test
 
-Each model received the identical prompt under identical conditions; the only variable between runs was the model itself. Every result was then loaded in a real browser and checked on three points: that it draws a 9×9 grid, that the puzzle it encodes is valid, and that the puzzle can be filled in and recognised as solved. Generation time and cost were recorded for each.
+Every model got the identical prompt under identical conditions; the only thing that changed from run to run was the model. Then each result was loaded in a real browser and put through three checks: does it draw a 9×9 grid, is the puzzle it builds actually valid, and can you fill it in and have the game recognise a win? We logged the time and the cost for every one.
 
 ## What the results show
 
-Of the sixty models, forty-one returned a working game, and twenty-three produced a Sudoku that was both correct and cleanly rendered. One produced a valid but reduced 4×4 board; the rest were unsolvable, broken, or not Sudoku at all. A little over a third of current models complete the task correctly on the first attempt. Three things in that number are worth drawing out.
+Of the sixty models, forty-one returned a working game, and twenty-three produced a Sudoku that was both correct and cleanly rendered. One built a perfectly valid but shrunken 4×4 board; the rest were unsolvable, broken, or — in a couple of memorable cases — not Sudoku at all. So a little over a third nailed it cold, on the first try. Three things in that result are worth lingering on.
 
-**Appearance and correctness are separate properties, and models fail at each independently.** One model wrote a correct solver and a correct win-check, then drew nothing: the page loaded with no grid on it. Any evaluation that looked only at the code, or trusted the program's internal state, would have marked it a success; only a screenshot showed there was no game. The opposite failure was just as common — a clean, well-styled grid wrapped around a puzzle with repeated digits and no solution. The practical lesson for anyone relying on generated software is that reading the code, or trusting the model's own account of what it built, is not enough. You have to run it and look at it.
+**Looking right and working right are different skills, and models flunk them independently.** My favourite failure of the whole study: one model wrote a flawless solver and a flawless win-check, and then drew absolutely nothing — the page loaded with no grid on it at all. Inspect only the code or the program's internal state and it sails through; one screenshot and the illusion collapses. The opposite was just as common, a crisp, well-styled grid wrapped around a puzzle with repeated digits and no solution. The takeaway is unglamorous but important: if you're shipping AI-written software, reading the code or trusting the model's own summary won't save you. You have to run it and look at it.
 
-![Sudoku Swing, generated by one of Qwen's coding-tuned models: correct, complete, and among the cheapest results in the test.](https://anselmotalotta.github.io/sudoku-llm-study/article/img-1.png)
+![Sudoku Swing, from one of Qwen's coding-tuned models — correct, polished, and one of the cheapest results in the test.](https://anselmotalotta.github.io/sudoku-llm-study/article/img-1.png)
 
-**Price and prestige did not predict quality.** The correct, fast, inexpensive results came disproportionately from the smaller tiers and the coding-specialised models, not the flagships. The single most expensive run in the study produced an invalid puzzle. This is not evidence that the large models are weak; it is evidence that, for a well-defined task like this, the extra money bought nothing measurable.
+**Price and prestige barely mattered — and that's the genuinely fun part.** The fast, cheap, correct games came overwhelmingly from the smaller tiers and the coding-specialised models, not the flagships. The single most expensive run in the study confidently handed back an invalid puzzle. None of this means the big models are weak; it means that for a clear, bounded job like this one, the extra money simply didn't buy a better answer.
 
-**Reading intent is part of the work.** Given a deliberately vague sentence, a few flagship models built a simplified 4×4 grid instead of a standard 9×9. That is a defensible interpretation of an ambiguous request, but it is not what most people mean by "a sudoku," and it is a reminder that competent generation includes resolving ambiguity the way a user would — not only producing syntactically valid code.
+**Reading the room counts too.** Handed a deliberately vague sentence, a few flagships quietly built a baby 4×4 instead of a real 9×9. It's a defensible reading — but it's not what a person asking for "a sudoku" pictures, and it's a neat reminder that good generation isn't just valid syntax. It's guessing what the human actually meant.
 
-## The verdict
+## So who would I reach for?
 
-Stated as plainly as the data allows:
+After sixty attempts, the honest shortlist:
 
-- **Best overall — `gemini-2.5-flash-lite`.** It rendered a clean, complete 9×9, did so in about 36 seconds, and was the least expensive model in the test. Nothing else matched that combination.
-- **Best value — `gemini-2.5-flash-lite`,** at roughly $0.004 per game, with Qwen's coder models close behind at about a cent.
-- **Fastest — `gemini-3-flash-preview`,** a playable board in 35 seconds.
-- **Most complete — `gpt-5.4`,** which shipped the widest set of features: difficulty levels, note-taking, hints.
-- **Most consistent — Anthropic, Google and DeepSeek,** whose models, when they delivered, almost always rendered correctly.
+- **Best overall — `gemini-2.5-flash-lite`.** A clean, complete 9×9, built in about 36 seconds, from the cheapest model in the field. Nothing else came close to that combination, and it's hard not to be a little charmed by it.
+- **Best value — `gemini-2.5-flash-lite` again,** at roughly $0.004 a game, with Qwen's coder models a hair behind at about a cent.
+- **Fastest — `gemini-3-flash-preview`,** a playable board in 35 seconds flat.
+- **Most complete — `gpt-5.4`,** which turned up with the deepest feature set: difficulty levels, notes, hints, the works.
+- **Most dependable — Anthropic, Google and DeepSeek,** whose models almost always rendered correctly when they delivered.
 
-![Jazz Sudoku Squares, generated by gemini-2.5-flash-lite: a correct, playable 9×9 produced for about $0.004.](https://anselmotalotta.github.io/sudoku-llm-study/article/img-2.png)
+![Jazz Sudoku Squares, from gemini-2.5-flash-lite — a correct, playable 9×9 for roughly $0.004.](https://anselmotalotta.github.io/sudoku-llm-study/article/img-2.png)
 
-The economic reading follows directly. For routine, well-specified generation — which is most real work — the inexpensive, fast tier is the rational default, and the coding-tuned models are a genuine bargain. The premium models earn their cost on problems that are genuinely hard or novel; spent on a task like this, that premium buys slower answers and, occasionally, wrong ones.
+The practical upshot writes itself. For everyday, well-specified generation — which is most of the work most of us do — the cheap, fast tier is the smart default, and the coding-tuned models are an outright steal. Save the expensive flagships for the genuinely hard, genuinely novel problems where their reasoning earns its keep. On a job like this, that premium mostly buys you a longer wait and the occasional wrong answer.
 
-## Caveats
+## The fine print
 
-This is a single prompt, run once per model, on one date. Model line-ups change quickly, outputs vary from run to run, and Sudoku is well represented in training data — so the test measures how reliably a familiar program can be produced and rendered, not novel reasoning. Read it as a snapshot, not a ranking.
+This is one prompt, run once per model, on one day. Line-ups shift fast, the same model can answer differently next time, and Sudoku is well-worn ground in training data — so think of this as how reliably a familiar program gets built and rendered, not a test of fresh reasoning. A snapshot, not a scoreboard.
 
 ## See for yourself
 
-Every game is published and playable in the browser:
+Every one of these runs in your browser right now:
 
 - [Sudoku Swing](https://anselmotalotta.github.io/sudoku-llm-study/games/qwen3-coder-next.html) — the coding-tuned standout
-- [Jazz Sudoku Squares](https://anselmotalotta.github.io/sudoku-llm-study/games/gemini-gemini-2-5-flash-lite.html) — the least expensive correct game
+- [Jazz Sudoku Squares](https://anselmotalotta.github.io/sudoku-llm-study/games/gemini-gemini-2-5-flash-lite.html) — the four-tenths-of-a-cent winner
 - [gpt-5.4](https://anselmotalotta.github.io/sudoku-llm-study/games/gpt-5-4.html) — the most feature-complete
-- [grok-4.3](https://anselmotalotta.github.io/sudoku-llm-study/games/xai-grok-4-3.html) — the one that renders nothing
+- [grok-4.3](https://anselmotalotta.github.io/sudoku-llm-study/games/xai-grok-4-3.html) — the one that proudly renders nothing
 
-The full methodology, per-model data and all thirty games are in the study: **https://anselmotalotta.github.io/sudoku-llm-study/**
+The full methodology, the per-model data, and all thirty games are in the study: **https://anselmotalotta.github.io/sudoku-llm-study/**
 
 ---
 
