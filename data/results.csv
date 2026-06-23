@@ -59,3 +59,15 @@ Alibaba (Qwen),qwen3.6-flash,delivered,broken,91,games/qwen3-6-flash.html
 Alibaba (Qwen),qwen3.6-plus,delivered,clean,245,games/qwen3-6-plus.html
 Alibaba (Qwen),qwen3.7-max,delivered,reduced,220,games/qwen3-7-max.html
 Alibaba (Qwen),qwen3.7-plus,delivered,flawed,233,games/qwen3-7-plus.html
+Zhipu (GLM),glm-5.2,delivered,clean,955,games/glm-5-2.html
+Zhipu (GLM),glm-4.6,delivered,clean,180,games/glm-4-6.html
+Zhipu (GLM),glm-4.5-air,delivered,clean,89,games/glm-4-5-air.html
+Zhipu (GLM),glm-4.5-flash,delivered,clean,113,games/glm-4-5-flash.html
+Zhipu (GLM),glm-4.5,delivered,broken,138,games/glm-4-5.html
+Moonshot (Kimi),kimi-k2.7-code,delivered,clean,185,games/kimi-k2-7-code.html
+Moonshot (Kimi),kimi-k2.5,delivered,clean,197,games/kimi-k2-5.html
+Moonshot (Kimi),kimi-k2.7-code-highspeed,delivered,flawed,73,games/kimi-k2-7-code-highspeed.html
+Moonshot (Kimi),moonshot-v1-8k,delivered,not_sudoku,29,games/moonshot-v1-8k.html
+Moonshot (Kimi),moonshot-v1-32k,delivered,not_sudoku,27,games/moonshot-v1-32k.html
+Moonshot (Kimi),moonshot-v1-128k,rejected (invalid output),not_delivered,33,
+Moonshot (Kimi),kimi-k2.6,did not deliver,not_delivered,98,

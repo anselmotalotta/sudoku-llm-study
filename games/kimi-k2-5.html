@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bebop Sudoku</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #050510;
+            color: #f0e6d2;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        #gameContainer {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        
+        h1 {
+            margin: 5px 0;
+            font-size: 1.8rem;
+            color: #d4a017;
+            text-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        #topBar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            background: rgba(26, 26, 58, 0.8);
+            border: 1px solid #d4a017;
+            color: #d4a017;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .btn:hover, .btn:active {
+            background: #d4a017;
+            color: #0a0a1a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 160, 23, 0.4);
+        }
+        
+        .btn.active {
+            background: #d4a017;
+            color: #0a0a1a;
+        }
+        
+        #timer {
+            font-size: 1.2rem;
+            color: #f0e6d2;
+            text-shadow: 0 0 5px rgba(240, 230, 210, 0.3);
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        #sudokuGrid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #d4a017;
+            padding: 2px;
+            border-radius: 4px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
+            width: min(95vw, 450px);
+            height: min(95vw, 450px);
+            position: relative;
+        }
+        
+        .cell {
+            background: rgba(13, 13, 26, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .cell:nth-child(3n):not(:nth-child(9n)) {
+            border-right: 2px solid #d4a017;
+        }
+        
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid #d4a017;
+        }
+        
+        .cell.selected {
+            background: rgba(212, 160, 23, 0.3);
+            box-shadow: inset 0 0 15px rgba(212, 160, 23, 0.5);
+            border-color: #d4a017;
+        }
+        
+        .cell.related {
+            background: rgba(212, 160, 23, 0.1);
+        }
+        
+        .cell.error {
+            color: #dc143c;
+            animation: flash 0.5s;
+            text-shadow: 0 0 10px #dc143c;
+        }
+        
+        .cell.fixed {
+            color: #f0e6d2;
+            background: rgba(26, 26, 46, 0.98);
+        }
+        
+        .cell.user {
+            color: #06d6a0;
+        }
+        
+        @keyframes flash {
+            0%, 100% { background: rgba(13, 13, 26, 0.95); }
+            50% { background: rgba(220, 20, 60, 0.4); }
+        }
+        
+        .pencil-marks {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            pointer-events: none;
+        }
+        
+        .pencil-mark {
+            font-size: 0.6rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: min(95vw, 450px);
+        }
+        
+        #numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .num-btn {
+            aspect-ratio: 1;
+            font-size: 1.3rem;
+            background: rgba(26, 26, 58, 0.9);
+            border: 1px solid rgba(212, 160, 23, 0.5);
+            color: #f0e6d2;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .num-btn:hover, .num-btn:active {
+            background: #d4a017;
+            color: #0a0a1a;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.6);
+        }
+        
+        #modeToggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+        
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 26, 0.95);
+            border: 2px solid #d4a017;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(212, 160, 23, 0.5);
+        }
+        
+        #message.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-height: 700px) {
+            h1 { font-size: 1.4rem; }
+            .cell { font-size: 1.2rem; }
+            #sudokuGrid { width: min(90vw, 380px); height: min(90vw, 380px); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="gameContainer">
+        <h1>Bebop Sudoku</h1>
+        
+        <div id="topBar">
+            <select id="difficulty" class="btn">
+                <option value="45">Easy</option>
+                <option value="35" selected>Medium</option>
+                <option value="25">Hard</option>
+            </select>
+            <button class="btn" onclick="newGame()">New Game</button>
+            <div id="timer">00:00</div>
+        </div>
+        
+        <div id="sudokuGrid"></div>
+        
+        <div id="controls">
+            <div id="numpad">
+                <button class="num-btn" onclick="inputNumber(1)">1</button>
+                <button class="num-btn" onclick="inputNumber(2)">2</button>
+                <button class="num-btn" onclick="inputNumber(3)">3</button>
+                <button class="num-btn" onclick="inputNumber(4)">4</button>
+                <button class="num-btn" onclick="inputNumber(5)">5</button>
+                <button class="num-btn" onclick="inputNumber(6)">6</button>
+                <button class="num-btn" onclick="inputNumber(7)">7</button>
+                <button class="num-btn" onclick="inputNumber(8)">8</button>
+                <button class="num-btn" onclick="inputNumber(9)">9</button>
+                <button class="num-btn" onclick="clearCell()" style="font-size: 0.8rem;">CLR</button>
+            </div>
+            
+            <div id="modeToggle">
+                <button id="btnFinal" class="btn mode-btn active" onclick="setMode('final')">Final Answer</button>
+                <button id="btnPencil" class="btn mode-btn" onclick="setMode('pencil')">Pencil Marks</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="message">
+        <h2 id="msgTitle">Complete!</h2>
+        <p id="msgText">Time: 00:00</p>
+        <button class="btn" onclick="hideMessage(); newGame();" style="margin-top: 15px;">Play Again</button>
+    </div>
+
+    <script>
+        // [PP_CONFIG_INJECT]
+        const GAME_CONFIG = {
+            "theme": { 
+                "title": "Bebop Sudoku", 
+                "background": "#0a0a1a", 
+                "grid": "#1a1a3a", 
+                "accent": "#d4a017",
+                "error": "#dc143c",
+                "success": "#06d6a0"
+            },
+            "audio": {
+                "enabled": true,
+                "volume": 0.3,
+                "bpm": 100
+            },
+            "difficulty": {
+                "easy": 45,
+                "medium": 35,
+                "hard": 25
+            },
+            "assets": { 
+                "background_image": null
+            }
+        };
+        if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+        // [/PP_CONFIG_INJECT]
+
+        // Constants
+        const THEME = GAME_CONFIG.theme || {};
+        const BG_COLOR = THEME.background || '#0a0a1a';
+        const ACCENT_COLOR = THEME.accent || '#d4a017';
+        const ERROR_COLOR = THEME.error || '#dc143c';
+        const SUCCESS_COLOR = THEME.success || '#06d6a0';
+        const AUDIO_ENABLED = GAME_CONFIG.audio ? GAME_CONFIG.audio.enabled : true;
+        const BPM = GAME_CONFIG.audio ? GAME_CONFIG.audio.bpm : 100;
+        
+        // Game State
+        let solution = [];
+        let puzzle = [];
+        let userGrid = [];
+        let pencilMarks = [];
+        let selectedCell = null;
+        let inputMode = 'final'; // 'final' or 'pencil'
+        let timerInterval;
+        let seconds = 0;
+        let gameActive = false;
+        let audioCtx;
+        let isAudioStarted = false;
+        let bassInterval;
+        let hatInterval;
+        let noiseBuffer;
+        
+        // Canvas Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Background Image
+        const bgImg = new Image();
+        if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+            bgImg.src = GAME_CONFIG.assets.background_image;
+        }
+        
+        // Particle System
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 1;
+                this.vy = -Math.random() * 1.5 - 0.5;
+                this.life = 1.0;
+                this.size = Math.random() * 15 + 5;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.008;
+                this.size += 0.1;
+                this.rotation += this.rotationSpeed;
+                this.vx += Math.sin(this.y * 0.01) * 0.01; // Wiggle
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.life * 0.4;
+                ctx.fillStyle = ACCENT_COLOR;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = ACCENT_COLOR;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        let particles = [];
+        
+        function spawnParticles(x, y, count = 10) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*50));
+            }
+        }
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Render Loop
+        function render() {
+            // Background
+            if (bgImg.complete && bgImg.naturalWidth) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                // Procedural velvet background
+                const grad = ctx.createRadialGradient(
+                    canvas.width/2, canvas.height/2, 0,
+                    canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)
+                );
+                grad.addColorStop(0, BG_COLOR);
+                grad.addColorStop(0.5, '#050510');
+                grad.addColorStop(1, '#000000');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Subtle noise texture simulation
+                ctx.fillStyle = 'rgba(255,255,255,0.01)';
+                for (let i = 0; i < 100; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const w = Math.random() * 2;
+                    const h = Math.random() * 2;
+                    ctx.fillRect(x, y, w, h);
+                }
+            }
+            
+            // Spotlight effect
+            const time = Date.now() * 0.0005;
+            const spotX = canvas.width/2 + Math.sin(time) * canvas.width * 0.3;
+            const spotY = canvas.height/3 + Math.cos(time * 0.7) * 100;
+            const spotGrad = ctx.createRadialGradient(spotX, spotY, 0, spotX, spotY, 400);
+            spotGrad.addColorStop(0, 'rgba(212, 160, 23, 0.08)');
+            spotGrad.addColorStop(0.5, 'rgba(212, 160, 23, 0.02)');
+            spotGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = spotGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+            
+            requestAnimationFrame(render);
+        }
+        render();
+        
+        // Audio System
+        function initAudio() {
+            if (isAudioStarted || !AUDIO_ENABLED) return;
+            
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioStarted = true;
+                
+                // Create noise buffer for hi-hat
+                const bufferSize = audioCtx.sampleRate * 2;
+                noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                startAmbientMusic();
+            } catch(e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        // Pentatonic scale frequencies (C minor pentatonic: C, Eb, F, G, Bb)
+        const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16];
+        
+        function playNote(number) {
+            if (!audioCtx || !AUDIO_ENABLED) return;
+            
+            const freq = PENTATONIC[(number - 1) % PENTATONIC.length] * (number > 5 ? 2 : 1);
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            
+            // Low pass filter for "piano-ish" sound
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 2000;
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        }
+        
+        function playChord() {
+            if (!audioCtx || !AUDIO_ENABLED) return;
+            
+            // Major 7th chord (Fmaj7: F-A-C-E)
+            const chord = [349.23, 440.00, 523.25, 659.25];
+            
+            chord.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    const filter = audioCtx.createBiquadFilter();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 800;
+                    filter.Q.value = 2;
+                    
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.5);
+                }, i * 30);
+            });
+        }
+        
+        function playVictory() {
+            if (!audioCtx || !AUDIO_ENABLED) return;
+            
+            // Trumpet-like arpeggio
+            const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51];
+            notes.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    const filter = audioCtx.createBiquadFilter();
+                    
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1500, audioCtx.currentTime);
+                    filter.frequency.exponentialRampToValueAtTime(3000, audioCtx.currentTime + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }, i * 120);
+            });
+        }
+        
+        function startAmbientMusic() {
+            if (!audioCtx) return;
+            
+            // Walking bass line
+            const bassNotes = [130.81, 155.56, 174.61, 196.00]; // C3, Eb3, F3, G3
+            let noteIdx = 0;
+            const beatTime = 60000 / BPM;
+            
+            bassInterval = setInterval(() => {
+                if (!gameActive) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                
+                osc.type = 'sawtooth';
+                // Walking pattern: root, approach, root, fifth variations
+                const note = bassNotes[noteIdx % bassNotes.length];
+                osc.frequency.value = note * (Math.random() > 0.8 ? 0.5 : 1);
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = 600;
+                
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.05, audioCtx.currentTime + 0.35);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+                noteIdx++;
+            }, beatTime);
+            
+            // Brushed hi-hat on beats 2 and 4 (swing)
+            hatInterval = setInterval(() => {
+                if (!gameActive || !noiseBuffer) return;
+                
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 6000;
+                
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                noise.start();
+                noise.stop(audioCtx.currentTime + 0.05);
+            }, beatTime * 2);
+        }
+        
+        // Sudoku Logic
+        function generateSudoku(emptyCells) {
+            // Initialize
+            let grid = Array(9).fill().map(() => Array(9).fill(0));
+            
+            // Fill diagonal 3x3 boxes
+            for (let i = 0; i < 9; i += 3) {
+                fillBox(grid, i, i);
+            }
+            
+            // Solve rest
+            solveSudoku(grid);
+            
+            // Create puzzle
+            solution = grid.map(row => [...row]);
+            puzzle = grid.map(row => [...row]);
+            userGrid = Array(9).fill().map(() => Array(9).fill(0));
+            pencilMarks = Array(9).fill().map(() => Array(9).fill().map(() => []));
+            
+            // Remove numbers
+            let attempts = 81 - emptyCells;
+            while (attempts > 0) {
+                let r = Math.floor(Math.random() * 9);
+                let c = Math.floor(Math.random() * 9);
+                if (puzzle[r][c] !== 0) {
+                    puzzle[r][c] = 0;
+                    attempts--;
+                }
+            }
+            
+            // Initialize user grid with givens
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (puzzle[r][c] !== 0) {
+                        userGrid[r][c] = puzzle[r][c];
+                    }
+                }
+            }
+        }
+        
+        function fillBox(grid, row, col) {
+            let nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+            let idx = 0;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    grid[row+i][col+j] = nums[idx++];
+                }
+            }
+        }
+        
+        function solveSudoku(grid) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (grid[row][col] === 0) {
+                        for (let num = 1; num <= 9; num++) {
+                            if (isValidMove(grid, row, col, num)) {
+                                grid[row][col] = num;
+                                if (solveSudoku(grid)) return true;
+                                grid[row][col] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        function isValidMove(grid, row, col, num) {
+            for (let x = 0; x < 9; x++) {
+                if (grid[row][x] === num) return false;
+                if (grid[x][col] === num) return false;
+            }
+            let startRow = row - row % 3, startCol = col - col % 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (grid[i + startRow][j + startCol] === num) return false;
+                }
+            }
+            return true;
+        }
+        
+        function checkConflicts() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, idx) => {
+                const row = Math.floor(idx / 9);
+                const col = idx % 9;
+                const val = userGrid[row][col];
+                
+                cell.classList.remove('error');
+                
+                if (val !== 0 && puzzle[row][col] === 0) {
+                    // Check against solution for conflicts in user-entered cells
+                    // Actually, Sudoku rules: check row, col, box for duplicates
+                    if (hasConflict(row, col, val)) {
+                        cell.classList.add('error');
+                    }
+                }
+            });
+        }
+        
+        function hasConflict(row, col, num) {
+            // Check row
+            for (let c = 0; c < 9; c++) {
+                if (c !== col && userGrid[row][c] === num) return true;
+            }
+            // Check col
+            for (let r = 0; r < 9; r++) {
+                if (r !== row && userGrid[r][col] === num) return true;
+            }
+            // Check box
+            let sr = row - row % 3, sc = col - col % 3;
+            for (let r = sr; r < sr + 3; r++) {
+                for (let c = sc; c < sc + 3; c++) {
+                    if ((r !== row || c !== col) && userGrid[r][c] === num) return true;
+                }
+            }
+            return false;
+        }
+        
+        function checkWin() {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (userGrid[r][c] !== solution[r][c]) return false;
+                }
+            }
+            return true;
+        }
+        
+        // UI Functions
+        function createGrid() {
+            const gridEl = document.getElementById('sudokuGrid');
+            gridEl.innerHTML = '';
+            
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    if (puzzle[r][c] !== 0) {
+                        cell.classList.add('fixed');
+                        cell.textContent = puzzle[r][c];
+                    } else {
+                        cell.classList.add('user');
+                    }
+                    
+                    cell.addEventListener('click', () => selectCell(r, c));
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+        
+        function selectCell(row, col) {
+            initAudio();
+            selectedCell = { row, col };
+            updateSelection();
+        }
+        
+        function updateSelection() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, idx) => {
+                const r = Math.floor(idx / 9);
+                const c = idx % 9;
+                
+                cell.classList.remove('selected', 'related');
+                
+                if (selectedCell && r === selectedCell.row && c === selectedCell.col) {
+                    cell.classList.add('selected');
+                } else if (selectedCell) {
+                    // Highlight same row, col, or box
+                    const sameRow = r === selectedCell.row;
+                    const sameCol = c === selectedCell.col;
+                    const sameBox = Math.floor(r/3) === Math.floor(selectedCell.row/3) && 
+                                   Math.floor(c/3) === Math.floor(selectedCell.col/3);
+                    if (sameRow || sameCol || sameBox) {
+                        cell.classList.add('related');
+                    }
+                }
+            });
+        }
+        
+        function inputNumber(num) {
+            initAudio();
+            if (!selectedCell || !gameActive) return;
+            const { row, col } = selectedCell;
+            
+            if (puzzle[row][col] !== 0) return; // Fixed cell
+            
+            if (inputMode === 'pencil') {
+                // Toggle pencil mark
+                const marks = pencilMarks[row][col];
+                const idx = marks.indexOf(num);
+                if (idx > -1) {
+                    marks.splice(idx, 1);
+                } else {
+                    marks.push(num);
+                    marks.sort();
+                }
+                playNote(num);
+                updateCell(row, col);
+            } else {
+                // Final answer
+                const oldVal = userGrid[row][col];
+                userGrid[row][col] = num;
+                
+                if (oldVal !== num) {
+                    playNote(num);
+                    
+                    // Check if row/col/box completed
+                    if (isRowComplete(row) || isColComplete(col) || isBoxComplete(row, col)) {
+                        setTimeout(() => playChord(), 200);
+                        // Spawn particles at cell position
+                        const cells = document.querySelectorAll('.cell');
+                        const idx = row * 9 + col;
+                        const rect = cells[idx].getBoundingClientRect();
+                        spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, 15);
+                    }
+                }
+                
+                updateCell(row, col);
+                checkConflicts();
+                
+                if (checkWin()) {
+                    gameWon();
+                }
+            }
+        }
+        
+        function clearCell() {
+            initAudio();
+            if (!selectedCell || !gameActive) return;
+            const { row, col } = selectedCell;
+            
+            if (puzzle[row][col] !== 0) return;
+            
+            userGrid[row][col] = 0;
+            pencilMarks[row][col] = [];
+            updateCell(row, col);
+            checkConflicts();
+        }
+        
+        function updateCell(row, col) {
+            const cells = document.querySelectorAll('.cell');
+            const idx = row * 9 + col;
+            const cell = cells[idx];
+            
+            if (puzzle[row][col] !== 0) return; // Don't update givens
+            
+            cell.innerHTML = '';
+            
+            if (userGrid[row][col] !== 0) {
+                cell.textContent = userGrid[row][col];
+                cell.classList.remove('error');
+            } else if (pencilMarks[row][col].length > 0) {
+                const marksDiv = document.createElement('div');
+                marksDiv.className = 'pencil-marks';
+                pencilMarks[row][col].forEach(mark => {
+                    const span = document.createElement('span');
+                    span.className = 'pencil-mark';
+                    span.textContent = mark;
+                    marksDiv.appendChild(span);
+                });
+                cell.appendChild(marksDiv);
+            }
+        }
+        
+        function isRowComplete(row) {
+            const seen = new Set();
+            for (let c = 0; c < 9; c++) {
+                if (userGrid[row][c] === 0) return false;
+                seen.add(userGrid[row][c]);
+            }
+            return seen.size === 9;
+        }
+        
+        function isColComplete(col) {
+            const seen = new Set();
+            for (let r = 0; r < 9; r++) {
+                if (userGrid[r][col] === 0) return false;
+                seen.add(userGrid[r][col]);
+            }
+            return seen.size === 9;
+        }
+        
+        function isBoxComplete(row, col) {
+            const sr = row - row % 3, sc = col - col % 3;
+            const seen = new Set();
+            for (let r = sr; r < sr + 3; r++) {
+                for (let c = sc; c < sc + 3; c++) {
+                    if (userGrid[r][c] === 0) return false;
+                    seen.add(userGrid[r][c]);
+                }
+            }
+            return seen.size === 9;
+        }
+        
+        function setMode(mode) {
+            initAudio();
+            inputMode = mode;
+            document.getElementById('btnFinal').classList.toggle('active', mode === 'final');
+            document.getElementById('btnPencil').classList.toggle('active', mode === 'pencil');
+        }
+        
+        function startTimer() {
+            clearInterval(timerInterval);
+            seconds = 0;
+            updateTimer();
+            timerInterval = setInterval(() => {
+                seconds++;
+                updateTimer();
+            }, 1000);
+        }
+        
+        function updateTimer() {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${mins}:${secs}`;
+        }
+        
+        function gameWon() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            playVictory();
+            
+            // Spawn celebration particles
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    spawnParticles(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height,
+                        20
+                    );
+                }, i * 300);
+            }
+            
+            setTimeout(() => {
+                document.getElementById('msgTitle').textContent = 'Set Complete!';
+                document.getElementById('msgText').textContent = `Time: ${document.getElementById('timer').textContent}`;
+                document.getElementById('message').classList.add('show');
+            }, 1000);
+        }
+        
+        function hideMessage() {
+            document.getElementById('message').classList.remove('show');
+        }
+        
+        function newGame() {
+            initAudio();
+            gameActive = true;
+            const diff = parseInt(document.getElementById('difficulty').value);
+            generateSudoku(diff);
+            createGrid();
+            startTimer();
+            selectedCell = null;
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            const key = e.key;
+            if (key >= '1' && key <= '9') {
+                inputNumber(parseInt(key));
+            } else if (key === 'Backspace' || key === 'Delete') {
+                clearCell();
+            } else if (key === 'Shift') {
+                setMode(inputMode === 'final' ? 'pencil' : 'final');
+            } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+                if (!selectedCell) {
+                    selectCell(0, 0);
+                } else {
+                    let { row, col } = selectedCell;
+                    if (key === 'ArrowUp') row = Math.max(0, row - 1);
+                    if (key === 'ArrowDown') row = Math.min(8, row + 1);
+                    if (key === 'ArrowLeft') col = Math.max(0, col - 1);
+                    if (key === 'ArrowRight') col = Math.min(8, col + 1);
+                    selectCell(row, col);
+                }
+            }
+        });
+        
+        // Initialize first game
+        newGame();
+    </script>
+<audio id="pp-bgm" loop preload="metadata" src="audio/kimi-k2-5.mp3"></audio><script id="pp-bgm-init">(function(){var a=document.getElementById("pp-bgm");if(!a)return;a.volume=0.3;var KEY="pp_bgm_muted";var muted=false;try{muted=localStorage.getItem(KEY)==="1";}catch(e){}a.muted=muted;var fired=false;function go(){if(fired)return;fired=true;if(a.muted)return;var r=a.play();if(r&&r.catch)r.catch(function(){});}try{if(!muted){var p=a.play();if(p&&p.then){p.then(function(){fired=true;}).catch(arm);}else{arm();}}else{arm();}}catch(e){arm();}function arm(){var ev=["pointerdown","keydown","touchstart"];var fn=function(){go();ev.forEach(function(e){document.removeEventListener(e,fn,true);});};ev.forEach(function(e){document.addEventListener(e,fn,{once:true,capture:true});});}})();</script><button id="pp-bgm-mute" type="button" aria-label="Toggle music" style="position:fixed;top:8px;right:8px;z-index:2147483647;width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:20px;line-height:40px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">🎵</button><script id="pp-bgm-mute-init">(function(){var a=document.getElementById("pp-bgm");var b=document.getElementById("pp-bgm-mute");if(!a||!b)return;var KEY="pp_bgm_muted";function render(){b.textContent=a.muted?"\uD83D\uDD07":"\uD83C\uDFB5";}render();b.addEventListener("click",function(e){e.stopPropagation();a.muted=!a.muted;try{localStorage.setItem(KEY,a.muted?"1":"0");}catch(err){}if(!a.muted){var r=a.play();if(r&&r.catch)r.catch(function(){});}else{try{a.pause();}catch(err){}}render();});})();</script>
+</body>
+</html>

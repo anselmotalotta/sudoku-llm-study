@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz Numbers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .difficulty-btn {
+            padding: 8px 16px;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .difficulty-btn:hover {
+            background: rgba(255, 215, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .difficulty-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .game-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            background: rgba(106, 90, 205, 0.8);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(106, 90, 205, 1);
+            transform: scale(1.05);
+        }
+
+        .sudoku-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #ffd700;
+            border: 3px solid #ffd700;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: #0f3460;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            color: #fff;
+        }
+
+        .cell:hover {
+            background: rgba(106, 90, 205, 0.8);
+        }
+
+        .cell.selected {
+            background: rgba(255, 215, 0, 0.3);
+            box-shadow: inset 0 0 0 2px #ffd700;
+        }
+
+        .cell.fixed {
+            background: #1a1a2e;
+            color: #ffd700;
+            cursor: default;
+        }
+
+        .cell.error {
+            animation: shake 0.5s;
+            background: rgba(255, 0, 0, 0.3);
+        }
+
+        .cell.correct {
+            animation: pulse 0.5s;
+        }
+
+        .cell:nth-child(3n):not(:nth-child(9n)) {
+            border-right: 2px solid #ffd700;
+        }
+
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid #ffd700;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 0 auto 20px;
+        }
+
+        .number-btn {
+            aspect-ratio: 1;
+            background: rgba(106, 90, 205, 0.8);
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .number-btn:hover {
+            background: rgba(106, 90, 205, 1);
+            transform: scale(1.05);
+        }
+
+        .number-btn.clear {
+            background: rgba(220, 20, 60, 0.8);
+            grid-column: span 2;
+        }
+
+        .number-btn.clear:hover {
+            background: rgba(220, 20, 60, 1);
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .message h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .message button {
+            padding: 10px 20px;
+            background: #ffd700;
+            border: none;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .cell {
+                font-size: 1.2rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Jazz Numbers</h1>
+        
+        <div class="controls">
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" data-level="easy">Easy</button>
+                <button class="difficulty-btn" data-level="medium">Medium</button>
+                <button class="difficulty-btn" data-level="hard">Hard</button>
+            </div>
+            
+            <div class="timer">00:00</div>
+            
+            <div class="game-actions">
+                <button class="action-btn" id="hint-btn">Hint</button>
+                <button class="action-btn" id="new-game-btn">New Game</button>
+            </div>
+        </div>
+        
+        <div class="sudoku-container">
+            <div class="sudoku-grid" id="sudoku-grid"></div>
+        </div>
+        
+        <div class="number-pad">
+            <button class="number-btn" data-number="1">1</button>
+            <button class="number-btn" data-number="2">2</button>
+            <button class="number-btn" data-number="3">3</button>
+            <button class="number-btn" data-number="4">4</button>
+            <button class="number-btn" data-number="5">5</button>
+            <button class="number-btn" data-number="6">6</button>
+            <button class="number-btn" data-number="7">7</button>
+            <button class="number-btn" data-number="8">8</button>
+            <button class="number-btn" data-number="9">9</button>
+            <button class="number-btn clear" data-number="0">Clear</button>
+        </div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <div class="message" id="win-message">
+        <h2>Congratulations!</h2>
+        <p>You've completed the puzzle!</p>
+        <p id="final-time"></p>
+        <button id="play-again-btn">Play Again</button>
+    </div>
+
+    <script>
+        // [PP_CONFIG_INJECT]
+        const GAME_CONFIG = {
+            "theme": { "title": "Jazz Numbers", "background": "#1a1a2e", "player": "#ffd700", "accent": "#6a5acd" },
+            "easyCells": 45,        // numbers a player might tune (cells to show for easy)
+            "mediumCells": 35,      // cells to show for medium
+            "hardCells": 25,        // cells to show for hard
+            "particleSpeed": 2,     // animation speed
+            "hintLimit": 3,         // maximum hints allowed
+            "assets": { "background_image": null, "note_sprite": null }  // image slots
+        };
+        if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+        // [/PP_CONFIG_INJECT]
+
+        // CONSTANTS
+        const TITLE = (GAME_CONFIG.theme && GAME_CONFIG.theme.title) || 'Jazz Numbers';
+        const BACKGROUND_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.background) || '#1a1a2e';
+        const PLAYER_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.player) || '#ffd700';
+        const ACCENT_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.accent) || '#6a5acd';
+        const EASY_CELLS = GAME_CONFIG.easyCells || 45;
+        const MEDIUM_CELLS = GAME_CONFIG.mediumCells || 35;
+        const HARD_CELLS = GAME_CONFIG.hardCells || 25;
+        const PARTICLE_SPEED = GAME_CONFIG.particleSpeed || 2;
+        const HINT_LIMIT = GAME_CONFIG.hintLimit || 3;
+
+        // Game state
+        let grid = [];
+        let solution = [];
+        let selectedCell = null;
+        let difficulty = 'easy';
+        let timer = 0;
+        let timerInterval = null;
+        let hintsUsed = 0;
+        let gameCompleted = false;
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        // Background image
+        const bgImg = new Image();
+        if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+            bgImg.src = GAME_CONFIG.assets.background_image;
+        }
+
+        // Note sprite
+        const noteImg = new Image();
+        if (GAME_CONFIG.assets && GAME_CONFIG.assets.note_sprite) {
+            noteImg.src = GAME_CONFIG.assets.note_sprite;
+        }
+
+        // Initialize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle class for visual effects
+        class Particle {
+            constructor(x, y, type = 'note') {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.size = Math.random() * 20 + 10;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = -Math.random() * 3 - 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = type === 'note' ? PLAYER_COLOR : '#ff6b6b';
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY * PARTICLE_SPEED;
+                this.life -= this.decay;
+                this.size *= 0.98;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                
+                if (this.type === 'note' && noteImg.complete && noteImg.naturalWidth) {
+                    ctx.drawImage(noteImg, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                } else {
+                    // Draw musical note shape
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Note stem
+                    ctx.fillRect(this.x + this.size/2 - 2, this.y - this.size, 4, this.size);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // Create particles
+        function createParticles(x, y, count = 10, type = 'note') {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, type));
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            // Draw background
+            if (bgImg.complete && bgImg.naturalWidth) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = BACKGROUND_COLOR;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Update and draw particles
+            particles = particles.filter(particle => {
+                particle.update();
+                particle.draw();
+                return particle.life > 0;
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Sudoku generation functions
+        function generateSudoku() {
+            // Create empty grid
+            grid = Array(9).fill().map(() => Array(9).fill(0));
+            solution = Array(9).fill().map(() => Array(9).fill(0));
+            
+            // Fill solution grid
+            fillGrid(solution);
+            
+            // Copy solution to grid
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    grid[i][j] = solution[i][j];
+                }
+            }
+            
+            // Remove numbers based on difficulty
+            let cellsToShow;
+            switch (difficulty) {
+                case 'easy': cellsToShow = EASY_CELLS; break;
+                case 'medium': cellsToShow = MEDIUM_CELLS; break;
+                case 'hard': cellsToShow = HARD_CELLS; break;
+                default: cellsToShow = EASY_CELLS;
+            }
+            
+            let cellsToRemove = 81 - cellsToShow;
+            while (cellsToRemove > 0) {
+                let row = Math.floor(Math.random() * 9);
+                let col = Math.floor(Math.random() * 9);
+                if (grid[row][col] !== 0) {
+                    grid[row][col] = 0;
+                    cellsToRemove--;
+                }
+            }
+        }
+
+        function fillGrid(board) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) {
+                        let numbers = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                        for (let num of numbers) {
+                            if (isValidMove(board, row, col, num)) {
+                                board[row][col] = num;
+                                if (fillGrid(board)) {
+                                    return true;
+                                }
+                                board[row][col] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function isValidMove(board, row, col, num) {
+            // Check row
+            for (let x = 0; x < 9; x++) {
+                if (board[row][x] === num) return false;
+            }
+            
+            // Check column
+            for (let x = 0; x < 9; x++) {
+                if (board[x][col] === num) return false;
+            }
+            
+            // Check 3x3 box
+            let boxRow = Math.floor(row / 3) * 3;
+            let boxCol = Math.floor(col / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[boxRow + i][boxCol + j] === num) return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Render functions
+        function renderGrid() {
+            const gridElement = document.getElementById('sudoku-grid');
+            gridElement.innerHTML = '';
+            
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    if (grid[row][col] !== 0) {
+                        cell.textContent = grid[row][col];
+                        if (isOriginalCell(row, col)) {
+                            cell.classList.add('fixed');
+                        }
+                    }
+                    
+                    cell.addEventListener('click', () => selectCell(row, col));
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function isOriginalCell(row, col) {
+            // This would need to be implemented if we want to track original cells
+            // For now, we'll assume non-zero cells in the initial grid are fixed
+            return grid[row][col] !== 0 && solution[row][col] === grid[row][col];
+        }
+
+        function selectCell(row, col) {
+            if (gameCompleted) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
+            // Select new cell
+            selectedCell = { row, col };
+            const cellElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            cellElement.classList.add('selected');
+        }
+
+        // Game functions
+        function makeMove(number) {
+            if (!selectedCell || gameCompleted) return;
+            
+            const { row, col } = selectedCell;
+            const cellElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            // Don't allow changes to fixed cells
+            if (cellElement.classList.contains('fixed')) return;
+            
+            if (number === 0) {
+                // Clear cell
+                grid[row][col] = 0;
+                cellElement.textContent = '';
+                cellElement.classList.remove('error', 'correct');
+            } else {
+                // Check if move is valid
+                if (isValidMove(grid, row, col, number)) {
+                    grid[row][col] = number;
+                    cellElement.textContent = number;
+                    cellElement.classList.remove('error');
+                    cellElement.classList.add('correct');
+                    
+                    // Create success particles
+                    const rect = cellElement.getBoundingClientRect();
+                    createParticles(rect.left + rect.width/2, rect.top + rect.height/2, 5);
+                    
+                    // Check if puzzle is complete
+                    if (isPuzzleComplete()) {
+                        gameWon();
+                    }
+                } else {
+                    // Invalid move
+                    cellElement.classList.add('error');
+                    setTimeout(() => cellElement.classList.remove('error'), 500);
+                }
+            }
+        }
+
+        function isPuzzleComplete() {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (grid[row][col] === 0) return false;
+                    if (grid[row][col] !== solution[row][col]) return false;
+                }
+            }
+            return true;
+        }
+
+        function gameWon() {
+            gameCompleted = true;
+            clearInterval(timerInterval);
+            
+            // Create celebration particles
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createParticles(
+                        Math.random() * window.innerWidth,
+                        Math.random() * window.innerHeight,
+                        3,
+                        'confetti'
+                    );
+                }, i * 50);
+            }
+            
+            // Show win message
+            document.getElementById('final-time').textContent = `Time: ${formatTime(timer)}`;
+            document.getElementById('win-message').style.display = 'block';
+        }
+
+        function giveHint() {
+            if (hintsUsed >= HINT_LIMIT || gameCompleted) return;
+            
+            // Find empty cells
+            const emptyCells = [];
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (grid[row][col] === 0) {
+                        emptyCells.push({ row, col });
+                    }
+                }
+            }
+            
+            if (emptyCells.length === 0) return;
+            
+            // Select random empty cell
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            const { row, col } = randomCell;
+            
+            // Fill with correct answer
+            grid[row][col] = solution[row][col];
+            const cellElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            cellElement.textContent = solution[row][col];
+            cellElement.classList.add('correct');
+            
+            // Create hint particles
+            const rect = cellElement.getBoundingClientRect();
+            createParticles(rect.left + rect.width/2, rect.top + rect.height/2, 8);
+            
+            hintsUsed++;
+            
+            // Check if puzzle is complete
+            if (isPuzzleComplete()) {
+                gameWon();
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            timer = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer++;
+                document.querySelector('.timer').textContent = formatTime(timer);
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // New game
+        function newGame() {
+            gameCompleted = false;
+            hintsUsed = 0;
+            selectedCell = null;
+            generateSudoku();
+            renderGrid();
+            startTimer();
+            document.getElementById('win-message').style.display = 'none';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Difficulty buttons
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    difficulty = btn.dataset.level;
+                    newGame();
+                });
+            });
+            
+            // Number pad
+            document.querySelectorAll('.number-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const number = parseInt(btn.dataset.number);
+                    makeMove(number);
+                });
+            });
+            
+            // Keyboard input
+            document.addEventListener('keydown', (e) => {
+                if (e.key >= '1' && e.key <= '9') {
+                    makeMove(parseInt(e.key));
+                } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') {
+                    makeMove(0);
+                }
+            });
+            
+            // Action buttons
+            document.getElementById('hint-btn').addEventListener('click', giveHint);
+            document.getElementById('new-game-btn').addEventListener('click', newGame);
+            document.getElementById('play-again-btn').addEventListener('click', newGame);
+            
+            // Initialize game
+            newGame();
+        });
+    </script>
+<audio id="pp-bgm" loop preload="metadata" src="audio/glm-4-5.mp3"></audio><script id="pp-bgm-init">(function(){var a=document.getElementById("pp-bgm");if(!a)return;a.volume=0.3;var KEY="pp_bgm_muted";var muted=false;try{muted=localStorage.getItem(KEY)==="1";}catch(e){}a.muted=muted;var fired=false;function go(){if(fired)return;fired=true;if(a.muted)return;var r=a.play();if(r&&r.catch)r.catch(function(){});}try{if(!muted){var p=a.play();if(p&&p.then){p.then(function(){fired=true;}).catch(arm);}else{arm();}}else{arm();}}catch(e){arm();}function arm(){var ev=["pointerdown","keydown","touchstart"];var fn=function(){go();ev.forEach(function(e){document.removeEventListener(e,fn,true);});};ev.forEach(function(e){document.addEventListener(e,fn,{once:true,capture:true});});}})();</script><button id="pp-bgm-mute" type="button" aria-label="Toggle music" style="position:fixed;top:8px;right:8px;z-index:2147483647;width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:20px;line-height:40px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">🎵</button><script id="pp-bgm-mute-init">(function(){var a=document.getElementById("pp-bgm");var b=document.getElementById("pp-bgm-mute");if(!a||!b)return;var KEY="pp_bgm_muted";function render(){b.textContent=a.muted?"\uD83D\uDD07":"\uD83C\uDFB5";}render();b.addEventListener("click",function(e){e.stopPropagation();a.muted=!a.muted;try{localStorage.setItem(KEY,a.muted?"1":"0");}catch(err){}if(!a.muted){var r=a.play();if(r&&r.catch)r.catch(function(){});}else{try{a.pause();}catch(err){}}render();});})();</script>
+</body>
+</html>

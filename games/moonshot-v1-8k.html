@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz Sudoku</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0d1b2a;
+        }
+        canvas {
+            border: 1px solid #fff;
+        }
+        #gameInfo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameInfo">Use mouse or touch to select cells and number keys to fill them.</div>
+    <script>
+        // [PP_CONFIG_INJECT]
+        const GAME_CONFIG = {
+          "theme": { "title": "Jazz Sudoku", "background": "#0d1b2a", "player": "#ffd166", "accent": "#06d6a0" },
+          "gridSize": 9, // size of the Sudoku grid
+          "moveSpeed": 240,
+          "lives": 3,
+          "spawnRate": 1.0,
+          "assets": { "player_sprite": null, "background_image": null }  
+        };
+        if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+        // [/PP_CONFIG_INJECT]
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let selectedCell = null;
+        const cells = [];
+        let lastNoteTime = 0;
+
+        // Constants
+        const GRID_SIZE = GAME_CONFIG.gridSize || 9;
+        const MOVE_SPEED = GAME_CONFIG.moveSpeed || 240;
+        const LIVES = GAME_CONFIG.lives || 3;
+        const SPAWN_RATE = GAME_CONFIG.spawnRate || 1.0;
+        const TITLE = (GAME_CONFIG.theme && GAME_CONFIG.theme.title) || 'Jazz Sudoku';
+        const BG_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.background) || '#0d1b2a';
+        const PLAYER_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.player) || '#ffd166';
+        const ACCENT_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.accent) || '#06d6a0';
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const cellSize = Math.min(canvas.width / GRID_SIZE, canvas.height / GRID_SIZE);
+
+        function init() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = { x, y, value: 0 };
+                    cells.push(cell);
+                }
+            }
+            drawBackground();
+            drawGrid();
+        }
+
+        function drawBackground() {
+            const bgImg = new Image();
+            if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+                bgImg.src = GAME_CONFIG.assets.background_image;
+            }
+
+            if (bgImg.complete && bgImg.naturalWidth) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = BG_COLOR;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            for (let y = 0; y <= GRID_SIZE; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * cellSize);
+                ctx.lineTo(canvas.width, y * cellSize);
+                ctx.stroke();
+            }
+            for (let x = 0; x <= GRID_SIZE; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * cellSize, 0);
+                ctx.lineTo(x * cellSize, canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        function drawCellContents(cell) {
+            if (cell.value === 0) return;
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${Math.min(cellSize / 2, 24)}px Arial`;
+            ctx.fillText(cell.value, cell.x * cellSize + cellSize / 2, cell.y * cellSize + cellSize / 2);
+        }
+
+        function draw() {
+            cells.forEach(drawCellContents);
+            if (selectedCell) {
+                ctx.strokeStyle = ACCENT_COLOR;
+                ctx.lineWidth = 5;
+                ctx.strokeRect(selectedCell.x * cellSize, selectedCell.y * cellSize, cellSize, cellSize);
+            }
+        }
+
+        function selectCell(x, y) {
+            selectedCell = cells.find(cell => cell.x === Math.floor(x / cellSize) && cell.y === Math.floor(y / cellSize));
+            draw();
+        }
+
+        function playNote() {
+            const currentTime = Date.now();
+            if (currentTime - lastNoteTime > 500) {
+                // Simulate a jazz note being played
+                console.log('Jazz note played!');
+                lastNoteTime = currentTime;
+            }
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            selectCell(event.touches[0].clientX, event.touches[0].clientY);
+            playNote();
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            if (selectedCell) {
+                // Simulate filling in the selected cell
+                console.log(`Filling in cell at ${selectedCell.x},${selectedCell.y}`);
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (selectedCell && !isNaN(event.key) && event.key !== '0') {
+                selectedCell.value = parseInt(event.key);
+                draw();
+            }
+        }
+
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener('keydown', handleKeyDown);
+
+        init();
+        setInterval(draw, 1000 / 60);
+    </script>
+<audio id="pp-bgm" loop preload="metadata" src="audio/moonshot-v1-8k.mp3"></audio><script id="pp-bgm-init">(function(){var a=document.getElementById("pp-bgm");if(!a)return;a.volume=0.3;var KEY="pp_bgm_muted";var muted=false;try{muted=localStorage.getItem(KEY)==="1";}catch(e){}a.muted=muted;var fired=false;function go(){if(fired)return;fired=true;if(a.muted)return;var r=a.play();if(r&&r.catch)r.catch(function(){});}try{if(!muted){var p=a.play();if(p&&p.then){p.then(function(){fired=true;}).catch(arm);}else{arm();}}else{arm();}}catch(e){arm();}function arm(){var ev=["pointerdown","keydown","touchstart"];var fn=function(){go();ev.forEach(function(e){document.removeEventListener(e,fn,true);});};ev.forEach(function(e){document.addEventListener(e,fn,{once:true,capture:true});});}})();</script><button id="pp-bgm-mute" type="button" aria-label="Toggle music" style="position:fixed;top:8px;right:8px;z-index:2147483647;width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:20px;line-height:40px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">🎵</button><script id="pp-bgm-mute-init">(function(){var a=document.getElementById("pp-bgm");var b=document.getElementById("pp-bgm-mute");if(!a||!b)return;var KEY="pp_bgm_muted";function render(){b.textContent=a.muted?"\uD83D\uDD07":"\uD83C\uDFB5";}render();b.addEventListener("click",function(e){e.stopPropagation();a.muted=!a.muted;try{localStorage.setItem(KEY,a.muted?"1":"0");}catch(err){}if(!a.muted){var r=a.play();if(r&&r.catch)r.catch(function(){});}else{try{a.pause();}catch(err){}}render();});})();</script>
+</body>
+</html>

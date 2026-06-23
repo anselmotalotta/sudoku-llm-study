@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sudoku Swing</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0f0f1a;
+      color: #f5f0e1;
+      font-family: 'Georgia', 'Times New Roman', serif;
+    }
+    #bgCanvas, #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    #bgCanvas { z-index: 0; }
+    #particleCanvas { z-index: 50; }
+    #game {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+    }
+    header {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 5vw, 2.2rem);
+      letter-spacing: 2px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      color: #ffd166;
+    }
+    .hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    select, button {
+      font-family: inherit;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #2a1f2d;
+      color: #f5f0e1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      transition: transform 0.1s, background 0.2s;
+    }
+    button:active, select:active { transform: scale(0.96); }
+    select {
+      appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f5f0e1' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    #timer {
+      font-variant-numeric: tabular-nums;
+      color: #ffd166;
+      font-size: 1.1rem;
+      min-width: 60px;
+      text-align: center;
+    }
+    #muteBtn { min-width: 42px; padding: 8px 10px; }
+    #gridWrap {
+      width: min(96vw, 520px);
+      aspect-ratio: 1 / 1;
+      background: #722f37;
+      padding: 3px;
+      border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    #grid {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 1px;
+    }
+    .cell {
+      background: #f5f0e1;
+      color: #1a1a3e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.1rem, 5vw, 1.8rem);
+      font-weight: bold;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cell:nth-child(3n) { border-right: 2px solid #722f37; }
+    .cell:nth-child(n+19):nth-child(-n+27),
+    .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #722f37; }
+    .cell.fixed { color: #1a1a3e; }
+    .cell.user { color: #4a4e69; }
+    .cell.selected {
+      background: #fff8e7;
+      box-shadow: inset 0 0 14px #ffd166, 0 0 18px rgba(255,209,102,0.6);
+      z-index: 2;
+    }
+    .cell.hinted {
+      animation: hintPulse 1.2s ease-in-out 2;
+    }
+    .cell.error { animation: errorBlink 0.4s ease-in-out 2; }
+    .cell.sameNumber { background: #e8e0cc; }
+    .cell.completed { animation: completeGlow 0.8s ease-out; }
+    @keyframes hintPulse {
+      0%, 100% { box-shadow: inset 0 0 0 #ffd166; }
+      50% { box-shadow: inset 0 0 20px #ffd166, 0 0 20px #ffd166; }
+    }
+    @keyframes errorBlink {
+      0%, 100% { background: #f5f0e1; }
+      50% { background: #e89c9c; }
+    }
+    @keyframes completeGlow {
+      0% { background: #f5f0e1; }
+      50% { background: #ffeaa7; }
+      100% { background: #f5f0e1; }
+    }
+    .pencils {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      right: 2px;
+      bottom: 2px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      pointer-events: none;
+    }
+    .pencil {
+      font-size: clamp(0.45rem, 2vw, 0.7rem);
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.85;
+    }
+    #dialWrap {
+      margin-top: 12px;
+      width: min(96vw, 360px);
+      height: 130px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #dial {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #3e2a35 0%, #1f1520 100%);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,209,102,0.08);
+    }
+    .dial-btn {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #ffd166;
+      color: #1a1a3e;
+      font-weight: bold;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      top: 50%;
+      left: 50%;
+      margin: -19px 0 0 -19px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    }
+    .dial-btn:active { transform: scale(0.92); }
+    #dialCenter {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #722f37;
+      color: #f5f0e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: bold;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+      z-index: 3;
+    }
+    #controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #controls button {
+      min-width: 74px;
+    }
+    #controls button.active {
+      background: #ffd166;
+      color: #1a1a3e;
+    }
+    #winOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15,15,26,0.92);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    #winOverlay.show { opacity: 1; pointer-events: auto; }
+    #winOverlay h2 { font-size: 2.4rem; color: #ffd166; margin: 0 0 10px; }
+    #winOverlay p { font-size: 1.1rem; margin: 0 0 20px; }
+    .hidden { display: none !important; }
+    @media (max-height: 700px) {
+      #dialWrap { height: 110px; margin-top: 8px; }
+      #dial { width: 110px; height: 110px; }
+      .dial-btn { width: 32px; height: 32px; margin: -16px 0 0 -16px; font-size: 0.95rem; }
+      #dialCenter { width: 38px; height: 38px; font-size: 0.75rem; }
+      #controls { margin-top: 8px; }
+      #controls button { padding: 6px 12px; font-size: 0.85rem; min-width: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="particleCanvas"></canvas>
+  <div id="game">
+    <header>
+      <h1 id="gameTitle">Sudoku Swing</h1>
+      <div class="hud">
+        <select id="difficulty" aria-label="Difficulty">
+          <option value="0">Smooth Beginner</option>
+          <option value="1">Cool Intermediate</option>
+          <option value="2" selected>Bebop Expert</option>
+        </select>
+        <div id="timer">00:00</div>
+        <button id="muteBtn" aria-label="Toggle music">🔊</button>
+      </div>
+    </header>
+    <div id="gridWrap">
+      <div id="grid"></div>
+    </div>
+    <div id="dialWrap">
+      <div id="dial">
+        <div id="dialCenter">PEN</div>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="pencilBtn">Pencil</button>
+      <button id="eraseBtn">Erase</button>
+      <button id="hintBtn">Hint</button>
+      <button id="newGameBtn">New Game</button>
+    </div>
+  </div>
+  <div id="winOverlay">
+    <h2>Encore!</h2>
+    <p id="winMessage">You solved the puzzle in style.</p>
+    <button id="playAgainBtn">Play Again</button>
+  </div>
+
+  <script>
+    // [PP_CONFIG_INJECT]
+    const GAME_CONFIG = {
+      "theme": {
+        "title": "Sudoku Swing",
+        "background": "#0f0f1a",
+        "grid": "#722f37",
+        "cell": "#f5f0e1",
+        "accent": "#ffd166",
+        "text": "#1a1a3e",
+        "error": "#c44536"
+      },
+      "difficulty": 2,
+      "showTimer": true,
+      "enableAudio": true,
+      "hintPenaltySeconds": 10,
+      "bpm": 110,
+      "assets": {
+        "background_image": null
+      }
+    };
+    if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+    // [/PP_CONFIG_INJECT]
+
+    const TITLE = (GAME_CONFIG.theme && GAME_CONFIG.theme.title) || 'Sudoku Swing';
+    const BACKGROUND = (GAME_CONFIG.theme && GAME_CONFIG.theme.background) || '#0f0f1a';
+    const GRID_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.grid) || '#722f37';
+    const CELL_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.cell) || '#f5f0e1';
+    const ACCENT = (GAME_CONFIG.theme && GAME_CONFIG.theme.accent) || '#ffd166';
+    const TEXT_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.text) || '#1a1a3e';
+    const ERROR_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.error) || '#c44536';
+    const DIFFICULTY = GAME_CONFIG.difficulty != null ? GAME_CONFIG.difficulty : 2;
+    const SHOW_TIMER = GAME_CONFIG.showTimer !== false;
+    const ENABLE_AUDIO = GAME_CONFIG.enableAudio !== false;
+    const HINT_PENALTY = GAME_CONFIG.hintPenaltySeconds || 10;
+    const BPM = GAME_CONFIG.bpm || 110;
+
+    const CLUES_BY_DIFFICULTY = [50, 40, 30];
+    const DIFFICULTY_NAMES = ['Smooth Beginner', 'Cool Intermediate', 'Bebop Expert'];
+
+    document.getElementById('gameTitle').textContent = TITLE;
+
+    const gridEl = document.getElementById('grid');
+    const dialEl = document.getElementById('dial');
+    const timerEl = document.getElementById('timer');
+    const pencilBtn = document.getElementById('pencilBtn');
+    const eraseBtn = document.getElementById('eraseBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const difficultySelect = document.getElementById('difficulty');
+    const muteBtn = document.getElementById('muteBtn');
+    const winOverlay = document.getElementById('winOverlay');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const dialCenter = document.getElementById('dialCenter');
+
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    const pCanvas = document.getElementById('particleCanvas');
+    const pCtx = pCanvas.getContext('2d');
+
+    let cells = [];
+    let solution = [];
+    let initial = [];
+    let userValues = [];
+    let pencils = [];
+    let selectedIndex = -1;
+    let pencilMode = false;
+    let timerStart = 0;
+    let timerInterval = null;
+    let gameWon = false;
+    let audioCtx = null;
+    let audioMuted = false;
+    let audioStarted = false;
+    let audioNodes = [];
+    let nextNoteTime = 0;
+    let beatIndex = 0;
+    let hintMuteUntil = 0;
+
+    // Background art
+    const bgImg = new Image();
+    if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+      bgImg.src = GAME_CONFIG.assets.background_image;
+    }
+
+    function resizeCanvas() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+      pCanvas.width = window.innerWidth;
+      pCanvas.height = window.innerHeight;
+      drawBackground();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawBackground() {
+      const w = bgCanvas.width, h = bgCanvas.height;
+      if (bgImg.complete && bgImg.naturalWidth) {
+        bgCtx.drawImage(bgImg, 0, 0, w, h);
+        return;
+      }
+      bgCtx.fillStyle = BACKGROUND;
+      bgCtx.fillRect(0, 0, w, h);
+      // Spotlight gradients
+      const g1 = bgCtx.createRadialGradient(w * 0.2, h * 0.15, 10, w * 0.3, h * 0.3, Math.max(w, h) * 0.6);
+      g1.addColorStop(0, 'rgba(255, 209, 102, 0.08)');
+      g1.addColorStop(1, 'rgba(15,15,26,0)');
+      bgCtx.fillStyle = g1;
+      bgCtx.fillRect(0, 0, w, h);
+      const g2 = bgCtx.createRadialGradient(w * 0.85, h * 0.1, 10, w * 0.75, h * 0.25, Math.max(w, h) * 0.5);
+      g2.addColorStop(0, 'rgba(114, 47, 55, 0.12)');
+      g2.addColorStop(1, 'rgba(15,15,26,0)');
+      bgCtx.fillStyle = g2;
+      bgCtx.fillRect(0, 0, w, h);
+      // Subtle vignette
+      const g3 = bgCtx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.3, w * 0.5, h * 0.5, Math.max(w, h) * 0.8);
+      g3.addColorStop(0, 'rgba(0,0,0,0)');
+      g3.addColorStop(1, 'rgba(0,0,0,0.55)');
+      bgCtx.fillStyle = g3;
+      bgCtx.fillRect(0, 0, w, h);
+    }
+
+    // Particle system
+    const particles = [];
+    const NOTE_SHAPES = ['♪', '♫', '♩', '♬', '✦', '✧', '•'];
+    class Particle {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type || 'sparkle';
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = -Math.random() * 3 - 1.5;
+        this.life = 1;
+        this.decay = 0.01 + Math.random() * 0.015;
+        this.size = 8 + Math.random() * 14;
+        this.color = type === 'note' ? ACCENT : (Math.random() > 0.5 ? ACCENT : '#ffffff');
+        this.shape = NOTE_SHAPES[Math.floor(Math.random() * NOTE_SHAPES.length)];
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = (Math.random() - 0.5) * 0.15;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.05;
+        this.life -= this.decay;
+        this.rotation += this.rotSpeed;
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = this.color;
+        if (this.type === 'note') {
+          ctx.font = `${this.size}px Georgia`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(this.shape, 0, 0);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+    function spawnParticles(x, y, count, type) {
+      for (let i = 0; i < count; i++) particles.push(new Particle(x, y, type));
+    }
+    function animateParticles() {
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(pCtx);
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      requestAnimationFrame(animateParticles);
+    }
+
+    // Sudoku generator
+    function createEmptyGrid() { return Array.from({length: 81}, () => 0); }
+    function getRow(index) { return Math.floor(index / 9); }
+    function getCol(index) { return index % 9; }
+    function getBox(index) { return Math.floor(getRow(index) / 3) * 3 + Math.floor(getCol(index) / 3); }
+    function isValidMove(grid, index, num) {
+      const r = getRow(index), c = getCol(index), b = getBox(index);
+      for (let i = 0; i < 81; i++) {
+        if (grid[i] === num) {
+          if (getRow(i) === r || getCol(i) === c || getBox(i) === b) return false;
+        }
+      }
+      return true;
+    }
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function solve(grid) {
+      for (let i = 0; i < 81; i++) {
+        if (grid[i] === 0) {
+          const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+          for (const n of nums) {
+            if (isValidMove(grid, i, n)) {
+              grid[i] = n;
+              if (solve(grid)) return true;
+              grid[i] = 0;
+            }
+          }
+          return false;
+        }
+      }
+      return true;
+    }
+    function countSolutions(grid, limit = 2) {
+      let count = 0;
+      function backtrack() {
+        for (let i = 0; i < 81; i++) {
+          if (grid[i] === 0) {
+            for (let n = 1; n <= 9; n++) {
+              if (isValidMove(grid, i, n)) {
+                grid[i] = n;
+                if (backtrack()) return true;
+                grid[i] = 0;
+              }
+            }
+            return false;
+          }
+        }
+        count++;
+        return count >= limit;
+      }
+      backtrack();
+      return count;
+    }
+    function generatePuzzle(difficulty) {
+      const grid = createEmptyGrid();
+      solve(grid);
+      const full = [...grid];
+      const targetClues = CLUES_BY_DIFFICULTY[difficulty] != null ? CLUES_BY_DIFFICULTY[difficulty] : CLUES_BY_DIFFICULTY[1];
+      const indices = shuffle([...Array(81).keys()]);
+      let removed = 0;
+      const maxRemove = 81 - targetClues;
+      for (const idx of indices) {
+        if (removed >= maxRemove) break;
+        const backup = grid[idx];
+        grid[idx] = 0;
+        const test = [...grid];
+        if (countSolutions(test, 2) === 1) {
+          removed++;
+        } else {
+          grid[idx] = backup;
+        }
+      }
+      return { puzzle: grid, solution: full };
+    }
+
+    // Audio system
+    function initAudio() {
+      if (!ENABLE_AUDIO || audioStarted) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      audioCtx = new AudioContext();
+      audioStarted = true;
+      nextNoteTime = audioCtx.currentTime + 0.1;
+      beatIndex = 0;
+      scheduleLoop();
+    }
+    function resumeAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function now() { return audioCtx ? audioCtx.currentTime : 0; }
+    function isMuted() { return audioMuted || now() < hintMuteUntil; }
+    function playTone(freq, start, duration, type, gain, pan = 0) {
+      if (!audioCtx || isMuted()) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      const p = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(gain, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      osc.connect(g);
+      if (p) { g.connect(p); p.connect(audioCtx.destination); p.pan.value = pan; }
+      else { g.connect(audioCtx.destination); }
+      osc.start(start);
+      osc.stop(start + duration);
+      audioNodes.push({osc, g});
+    }
+    function playNoise(start, duration, gain) {
+      if (!audioCtx || isMuted()) return;
+      const bufferSize = audioCtx.sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const g = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 600;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(gain, start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      noise.connect(filter);
+      filter.connect(g);
+      g.connect(audioCtx.destination);
+      noise.start(start);
+      noise.stop(start + duration);
+      audioNodes.push({noise, g});
+    }
+    function chordOf(root, quality) {
+      const semis = { 'maj7': [0,4,7,11], '7': [0,4,7,10], 'm7': [0,3,7,10] };
+      const base = 130.81 * Math.pow(2, root / 12);
+      return semis[quality].map(s => base * Math.pow(2, s / 12));
+    }
+    const PROGRESSION = [
+      { root: 0, qual: 'maj7' },
+      { root: 9, qual: '7' },
+      { root: 5, qual: 'm7' },
+      { root: 10, qual: '7' }
+    ];
+    function scheduleLoop() {
+      if (!audioCtx) return;
+      const beatDur = 60 / BPM;
+      const lookahead = 0.2;
+      while (nextNoteTime < audioCtx.currentTime + lookahead) {
+        const beat = beatIndex % 4;
+        const bar = Math.floor(beatIndex / 4) % 4;
+        const chord = PROGRESSION[bar];
+        // Walking bass
+        const bassLine = [
+          chord.root,
+          chord.root + 2,
+          chord.root + 4,
+          chord.root - 1
+        ];
+        const bassFreq = 65.41 * Math.pow(2, (bassLine[beat]) / 12);
+        playTone(bassFreq, nextNoteTime, beatDur * 0.85, 'triangle', 0.28, -0.3);
+        // Brushed drums
+        if (beat === 0 || beat === 2) {
+          playNoise(nextNoteTime, beatDur * 0.15, 0.12);
+        }
+        if (beat === 1 || beat === 3) {
+          playNoise(nextNoteTime, beatDur * 0.25, 0.18);
+        }
+        // Ride/hat tick
+        playNoise(nextNoteTime, 0.03, 0.05);
+        // Chord stab on beat 0 occasionally
+        if (beat === 0 && Math.random() > 0.35) {
+          const freqs = chordOf(chord.root, chord.qual);
+          freqs.forEach((f, i) => playTone(f, nextNoteTime, beatDur * 2.5, i === 0 ? 'triangle' : 'sine', 0.05, i % 2 === 0 ? 0.2 : -0.2));
+        }
+        nextNoteTime += beatDur;
+        beatIndex++;
+      }
+      setTimeout(scheduleLoop, 50);
+    }
+
+    // UI builders
+    function buildGrid() {
+      gridEl.innerHTML = '';
+      cells = [];
+      for (let i = 0; i < 81; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.addEventListener('click', () => selectCell(i));
+        const pencilWrap = document.createElement('div');
+        pencilWrap.className = 'pencils';
+        cell.appendChild(pencilWrap);
+        gridEl.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+    function buildDial() {
+      for (let n = 1; n <= 9; n++) {
+        const btn = document.createElement('button');
+        btn.className = 'dial-btn';
+        btn.textContent = n;
+        btn.dataset.num = n;
+        btn.setAttribute('aria-label', `Number ${n}`);
+        const angle = (n - 1) * (Math.PI * 2 / 9) - Math.PI / 2;
+        const r = 42;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        btn.style.transform = `translate(${x}px, ${y}px)`;
+        btn.addEventListener('click', (e) => { e.stopPropagation(); inputNumber(n); });
+        dialEl.appendChild(btn);
+      }
+    }
+
+    function startNewGame() {
+      const diff = parseInt(difficultySelect.value, 10);
+      const { puzzle, solution: sol } = generatePuzzle(diff);
+      initial = [...puzzle];
+      solution = sol;
+      userValues = Array(81).fill(0);
+      pencils = Array.from({length: 81}, () => new Set());
+      selectedIndex = -1;
+      pencilMode = false;
+      gameWon = false;
+      updatePencilButton();
+      buildGrid();
+      renderGrid();
+      startTimer();
+      winOverlay.classList.remove('show');
+      if (ENABLE_AUDIO) { initAudio(); resumeAudio(); }
+    }
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerStart = Date.now();
+      if (!SHOW_TIMER) { timerEl.textContent = ''; return; }
+      timerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - timerStart) / 1000);
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function renderGrid() {
+      for (let i = 0; i < 81; i++) {
+        const cell = cells[i];
+        const val = userValues[i] || initial[i];
+        cell.className = 'cell';
+        if (initial[i]) cell.classList.add('fixed');
+        else if (userValues[i]) cell.classList.add('user');
+        if (i === selectedIndex) cell.classList.add('selected');
+        if (selectedIndex !== -1 && val && val === getValueAt(selectedIndex)) cell.classList.add('sameNumber');
+        cell.textContent = val || '';
+        // Pencils
+        if (!val && pencils[i].size > 0) {
+          const wrap = document.createElement('div');
+          wrap.className = 'pencils';
+          for (let n = 1; n <= 9; n++) {
+            const p = document.createElement('div');
+            p.className = 'pencil';
+            p.textContent = pencils[i].has(n) ? n : '';
+            wrap.appendChild(p);
+          }
+          cell.appendChild(wrap);
+        }
+      }
+    }
+    function getValueAt(index) {
+      return userValues[index] || initial[index];
+    }
+    function selectCell(index) {
+      selectedIndex = index;
+      renderGrid();
+      if (ENABLE_AUDIO) { initAudio(); resumeAudio(); }
+    }
+    function inputNumber(num) {
+      if (selectedIndex === -1 || gameWon) return;
+      if (initial[selectedIndex]) return;
+      if (pencilMode) {
+        if (pencils[selectedIndex].has(num)) pencils[selectedIndex].delete(num);
+        else pencils[selectedIndex].add(num);
+      } else {
+        const prev = userValues[selectedIndex];
+        userValues[selectedIndex] = num;
+        if (num !== solution[selectedIndex]) {
+          cells[selectedIndex].classList.add('error');
+          setTimeout(() => cells[selectedIndex] && cells[selectedIndex].classList.remove('error'), 800);
+        }
+        if (prev !== num) checkCompletedUnits();
+      }
+      renderGrid();
+      checkWin();
+    }
+    function eraseCell() {
+      if (selectedIndex === -1 || gameWon) return;
+      if (initial[selectedIndex]) return;
+      userValues[selectedIndex] = 0;
+      pencils[selectedIndex].clear();
+      renderGrid();
+    }
+    function togglePencil() {
+      pencilMode = !pencilMode;
+      updatePencilButton();
+    }
+    function updatePencilButton() {
+      pencilBtn.classList.toggle('active', pencilMode);
+      dialCenter.textContent = pencilMode ? 'PEN' : 'PEN';
+      dialCenter.style.background = pencilMode ? ACCENT : GRID_COLOR;
+      dialCenter.style.color = pencilMode ? TEXT_COLOR : CELL_COLOR;
+    }
+    function giveHint() {
+      if (selectedIndex === -1 || gameWon) return;
+      if (initial[selectedIndex]) return;
+      // Temporarily mute jazz
+      hintMuteUntil = now() + HINT_PENALTY;
+      // Find a solvable cell (current selected if empty, else any empty)
+      let idx = -1;
+      if (userValues[selectedIndex] === 0) idx = selectedIndex;
+      else {
+        const empties = [];
+        for (let i = 0; i < 81; i++) {
+          if (initial[i] === 0 && userValues[i] === 0) empties.push(i);
+        }
+        shuffle(empties);
+        for (const i of empties) {
+          let validCount = 0;
+          for (let n = 1; n <= 9; n++) {
+            if (isValidMove(getCurrentGrid(), i, n)) validCount++;
+          }
+          if (validCount === 1) { idx = i; break; }
+        }
+        if (idx === -1 && empties.length) idx = empties[0];
+      }
+      if (idx !== -1) {
+        selectedIndex = idx;
+        cells[idx].classList.add('hinted');
+        setTimeout(() => cells[idx] && cells[idx].classList.remove('hinted'), 2400);
+        renderGrid();
+      }
+    }
+    function getCurrentGrid() {
+      const g = createEmptyGrid();
+      for (let i = 0; i < 81; i++) g[i] = initial[i] || userValues[i];
+      return g;
+    }
+    function checkCompletedUnits() {
+      // Rows
+      for (let r = 0; r < 9; r++) {
+        const nums = new Set();
+        let full = true;
+        for (let c = 0; c < 9; c++) {
+          const v = getValueAt(r * 9 + c);
+          if (!v) { full = false; break; }
+          nums.add(v);
+        }
+        if (full && nums.size === 9) flashUnit('row', r);
+      }
+      // Cols
+      for (let c = 0; c < 9; c++) {
+        const nums = new Set();
+        let full = true;
+        for (let r = 0; r < 9; r++) {
+          const v = getValueAt(r * 9 + c);
+          if (!v) { full = false; break; }
+          nums.add(v);
+        }
+        if (full && nums.size === 9) flashUnit('col', c);
+      }
+      // Boxes
+      for (let b = 0; b < 9; b++) {
+        const nums = new Set();
+        let full = true;
+        const br = Math.floor(b / 3) * 3;
+        const bc = (b % 3) * 3;
+        for (let r = br; r < br + 3; r++) {
+          for (let c = bc; c < bc + 3; c++) {
+            const v = getValueAt(r * 9 + c);
+            if (!v) { full = false; break; }
+            nums.add(v);
+          }
+          if (!full) break;
+        }
+        if (full && nums.size === 9) flashUnit('box', b);
+      }
+    }
+    function flashUnit(type, index) {
+      let indices = [];
+      if (type === 'row') for (let c = 0; c < 9; c++) indices.push(index * 9 + c);
+      if (type === 'col') for (let r = 0; r < 9; r++) indices.push(r * 9 + index);
+      if (type === 'box') {
+        const br = Math.floor(index / 3) * 3;
+        const bc = (index % 3) * 3;
+        for (let r = br; r < br + 3; r++) for (let c = bc; c < bc + 3; c++) indices.push(r * 9 + c);
+      }
+      indices.forEach(i => cells[i].classList.add('completed'));
+      setTimeout(() => indices.forEach(i => cells[i] && cells[i].classList.remove('completed')), 800);
+      const rect = gridEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      spawnParticles(cx, cy, 18, 'note');
+      spawnParticles(cx, cy, 12, 'sparkle');
+    }
+    function checkWin() {
+      for (let i = 0; i < 81; i++) {
+        const v = initial[i] || userValues[i];
+        if (v !== solution[i]) return;
+      }
+      gameWon = true;
+      clearInterval(timerInterval);
+      const sec = Math.floor((Date.now() - timerStart) / 1000);
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      document.getElementById('winMessage').textContent = `You solved the puzzle in ${m}:${s}. Take a bow!`;
+      winOverlay.classList.add('show');
+      const rect = gridEl.getBoundingClientRect();
+      spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 60, 'note');
+      spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 40, 'sparkle');
+    }
+
+    // Controls events
+    eraseBtn.addEventListener('click', eraseCell);
+    pencilBtn.addEventListener('click', togglePencil);
+    hintBtn.addEventListener('click', giveHint);
+    newGameBtn.addEventListener('click', startNewGame);
+    playAgainBtn.addEventListener('click', startNewGame);
+    difficultySelect.addEventListener('change', startNewGame);
+    muteBtn.addEventListener('click', () => {
+      audioMuted = !audioMuted;
+      muteBtn.textContent = audioMuted ? '🔇' : '🔊';
+      if (!audioMuted) { initAudio(); resumeAudio(); }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (gameWon) return;
+      if (e.key >= '1' && e.key <= '9') {
+        inputNumber(parseInt(e.key, 10));
+      } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+        eraseCell();
+      } else if (e.key === 'p' || e.key === 'P') {
+        togglePencil();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (selectedIndex === -1) { selectCell(0); return; }
+        let r = getRow(selectedIndex), c = getCol(selectedIndex);
+        if (e.key === 'ArrowUp') r = (r + 8) % 9;
+        if (e.key === 'ArrowDown') r = (r + 1) % 9;
+        if (e.key === 'ArrowLeft') c = (c + 8) % 9;
+        if (e.key === 'ArrowRight') c = (c + 1) % 9;
+        selectCell(r * 9 + c);
+      }
+    });
+    document.addEventListener('click', () => {
+      if (ENABLE_AUDIO) { initAudio(); resumeAudio(); }
+    });
+
+    // Initialize
+    resizeCanvas();
+    buildDial();
+    startNewGame();
+    animateParticles();
+  </script>
+<audio id="pp-bgm" loop preload="metadata" src="audio/kimi-k2-7-code.mp3"></audio><script id="pp-bgm-init">(function(){var a=document.getElementById("pp-bgm");if(!a)return;a.volume=0.3;var KEY="pp_bgm_muted";var muted=false;try{muted=localStorage.getItem(KEY)==="1";}catch(e){}a.muted=muted;var fired=false;function go(){if(fired)return;fired=true;if(a.muted)return;var r=a.play();if(r&&r.catch)r.catch(function(){});}try{if(!muted){var p=a.play();if(p&&p.then){p.then(function(){fired=true;}).catch(arm);}else{arm();}}else{arm();}}catch(e){arm();}function arm(){var ev=["pointerdown","keydown","touchstart"];var fn=function(){go();ev.forEach(function(e){document.removeEventListener(e,fn,true);});};ev.forEach(function(e){document.addEventListener(e,fn,{once:true,capture:true});});}})();</script><button id="pp-bgm-mute" type="button" aria-label="Toggle music" style="position:fixed;top:8px;right:8px;z-index:2147483647;width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:20px;line-height:40px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">🎵</button><script id="pp-bgm-mute-init">(function(){var a=document.getElementById("pp-bgm");var b=document.getElementById("pp-bgm-mute");if(!a||!b)return;var KEY="pp_bgm_muted";function render(){b.textContent=a.muted?"\uD83D\uDD07":"\uD83C\uDFB5";}render();b.addEventListener("click",function(e){e.stopPropagation();a.muted=!a.muted;try{localStorage.setItem(KEY,a.muted?"1":"0");}catch(err){}if(!a.muted){var r=a.play();if(r&&r.catch)r.catch(function(){});}else{try{a.pause();}catch(err){}}render();});})();</script>
+</body>
+</html>

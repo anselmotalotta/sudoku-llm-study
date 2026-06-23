@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz Sudoku Symphony</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e1e7eb;
+        }
+        #gameCanvas {
+            border: 4px solid #94d2bd;
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="450" height="450"></canvas>
+    <div>
+        <button onclick="placeNumber(1)">1</button>
+        <button onclick="placeNumber(2)">2</button>
+        <button onclick="placeNumber(3)">3</button>
+        <button onclick="placeNumber(4)">4</button>
+        <button onclick="placeNumber(5)">5</button>
+        <button onclick="placeNumber(6)">6</button>
+        <button onclick="placeNumber(7)">7</button>
+        <button onclick="placeNumber(8)">8</button>
+        <button onclick="placeNumber(9)">9</button>
+    </div>
+    <script>
+    // [PP_CONFIG_INJECT]
+    const GAME_CONFIG = {
+        "theme": { "title": "Jazz Sudoku Symphony", "background": "#e1e7eb", "player": "#94d2bd", "accent": "#06d6a0" },
+        "moveSpeed": 240,
+        "lives": 3,
+        "spawnRate": 1.0,
+        "assets": { "player_sprite": null, "background_image": null }
+    };
+    if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+    // [/PP_CONFIG_INJECT]
+
+    const MOVE_SPEED = (GAME_CONFIG.moveSpeed || 240);
+    const TITLE = (GAME_CONFIG.theme && GAME_CONFIG.theme.title) || 'Jazz Sudoku Symphony';
+    const BG_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.background) || '#e1e7eb';
+    const PLAYER_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.player) || '#94d2bd';
+    const ACCENT_COLOR = (GAME_CONFIG.theme && GAME_CONFIG.theme.accent) || '#06d6a0';
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const grid = Array(9).fill(null).map(() => Array(9).fill(0));
+    let selectedNumber = null;
+    let moveCount = 0;
+    let isGameOver = false;
+
+    const bgImg = new Image();
+    if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+      bgImg.src = GAME_CONFIG.assets.background_image;
+    }
+
+    const playerImg = new Image();
+    if (GAME_CONFIG.assets && GAME_CONFIG.assets.player_sprite) {
+      playerImg.src = GAME_CONFIG.assets.player_sprite;
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (bgImg.complete && bgImg.naturalWidth) {
+            ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = BG_COLOR;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.strokeStyle = ACCENT_COLOR;
+        for (let i = 0; i < 9; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * 50);
+            ctx.lineTo(450, i * 50);
+            ctx.stroke();
+            ctx.moveTo(i * 50, 0);
+            ctx.lineTo(i * 50, 450);
+            ctx.stroke();
+        }
+    }
+
+    function drawNumber(x, y, num) {
+        if (num > 0) {
+            ctx.fillStyle = PLAYER_COLOR;
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(num, x + 25, y + 35);
+        }
+    }
+
+    function placeNumber(num) {
+        if (isGameOver) return;
+        
+        let row = Math.floor(canvas.width / 9) * 3 * (Math.floor(moveCount / 9));
+        let col = Math.floor(moveCount % 9) * 50;
+        
+        grid[Math.floor(row / 50)][Math.floor(col / 50)] = num;
+        
+        drawGrid();
+        drawNumber(row, col, num);
+        
+        moveCount++;
+        if (checkSudoku()) {
+            alert('Congratulations! You have completed the Sudoku.');
+            isGameOver = true;
+        }
+    }
+
+    function checkSudoku() {
+        for (let i = 0; i < 9; i++) {
+            const row = grid[i];
+            const column = grid.map(row => row[i]);
+            const square = [];
+            for (let x = 0; x < 3; x++) {
+                for (let y = 0; y < 3; y++) {
+                    square.push(grid[3 * x + i][3 * y + x]);
+                }
+            }
+            if (!isValid(row) || !isValid(column) || !isValid(square)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isValid(array) {
+        const numSet = new Set(array.filter(num => num > 0));
+        return numSet.size === 9;
+    }
+
+    function gameLoop() {
+        if (!isGameOver) {
+            requestAnimationFrame(gameLoop);
+            drawGrid();
+        }
+    }
+
+    gameLoop();
+    </script>
+<audio id="pp-bgm" loop preload="metadata" src="audio/moonshot-v1-32k.mp3"></audio><script id="pp-bgm-init">(function(){var a=document.getElementById("pp-bgm");if(!a)return;a.volume=0.3;var KEY="pp_bgm_muted";var muted=false;try{muted=localStorage.getItem(KEY)==="1";}catch(e){}a.muted=muted;var fired=false;function go(){if(fired)return;fired=true;if(a.muted)return;var r=a.play();if(r&&r.catch)r.catch(function(){});}try{if(!muted){var p=a.play();if(p&&p.then){p.then(function(){fired=true;}).catch(arm);}else{arm();}}else{arm();}}catch(e){arm();}function arm(){var ev=["pointerdown","keydown","touchstart"];var fn=function(){go();ev.forEach(function(e){document.removeEventListener(e,fn,true);});};ev.forEach(function(e){document.addEventListener(e,fn,{once:true,capture:true});});}})();</script><button id="pp-bgm-mute" type="button" aria-label="Toggle music" style="position:fixed;top:8px;right:8px;z-index:2147483647;width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:20px;line-height:40px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">🎵</button><script id="pp-bgm-mute-init">(function(){var a=document.getElementById("pp-bgm");var b=document.getElementById("pp-bgm-mute");if(!a||!b)return;var KEY="pp_bgm_muted";function render(){b.textContent=a.muted?"\uD83D\uDD07":"\uD83C\uDFB5";}render();b.addEventListener("click",function(e){e.stopPropagation();a.muted=!a.muted;try{localStorage.setItem(KEY,a.muted?"1":"0");}catch(err){}if(!a.muted){var r=a.play();if(r&&r.catch)r.catch(function(){});}else{try{a.pause();}catch(err){}}render();});})();</script>
+</body>
+</html>

@@ -478,5 +478,101 @@
   "verdict": "flawed",
   "gen_seconds": 233,
   "game": "games/qwen3-7-plus.html"
+ },
+ {
+  "vendor": "Zhipu (GLM)",
+  "model": "glm-5.2",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 955,
+  "game": "games/glm-5-2.html"
+ },
+ {
+  "vendor": "Zhipu (GLM)",
+  "model": "glm-4.6",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 180,
+  "game": "games/glm-4-6.html"
+ },
+ {
+  "vendor": "Zhipu (GLM)",
+  "model": "glm-4.5-air",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 89,
+  "game": "games/glm-4-5-air.html"
+ },
+ {
+  "vendor": "Zhipu (GLM)",
+  "model": "glm-4.5-flash",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 113,
+  "game": "games/glm-4-5-flash.html"
+ },
+ {
+  "vendor": "Zhipu (GLM)",
+  "model": "glm-4.5",
+  "stage1": "delivered",
+  "verdict": "broken",
+  "gen_seconds": 138,
+  "game": "games/glm-4-5.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "kimi-k2.7-code",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 185,
+  "game": "games/kimi-k2-7-code.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "kimi-k2.5",
+  "stage1": "delivered",
+  "verdict": "clean",
+  "gen_seconds": 197,
+  "game": "games/kimi-k2-5.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "kimi-k2.7-code-highspeed",
+  "stage1": "delivered",
+  "verdict": "flawed",
+  "gen_seconds": 73,
+  "game": "games/kimi-k2-7-code-highspeed.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "moonshot-v1-8k",
+  "stage1": "delivered",
+  "verdict": "not_sudoku",
+  "gen_seconds": 29,
+  "game": "games/moonshot-v1-8k.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "moonshot-v1-32k",
+  "stage1": "delivered",
+  "verdict": "not_sudoku",
+  "gen_seconds": 27,
+  "game": "games/moonshot-v1-32k.html"
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "moonshot-v1-128k",
+  "stage1": "rejected (invalid output)",
+  "verdict": "not_delivered",
+  "gen_seconds": 33,
+  "game": ""
+ },
+ {
+  "vendor": "Moonshot (Kimi)",
+  "model": "kimi-k2.6",
+  "stage1": "did not deliver",
+  "verdict": "not_delivered",
+  "gen_seconds": 98,
+  "game": ""
  }
 ]

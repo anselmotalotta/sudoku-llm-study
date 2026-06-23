@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Blue Note Sudoku</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #0d1b2a;
+    color: #f4e8c1;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+  }
+
+  .game-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px 24px;
+    min-height: 100vh;
+  }
+
+  .title-line {
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4a574, transparent);
+    margin: 6px 0 2px;
+  }
+
+  h1 {
+    color: #d4a574;
+    font-size: clamp(22px, 5.5vw, 34px);
+    margin: 2px 0 2px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 24px rgba(212,165,116,0.4), 0 2px 6px rgba(0,0,0,0.6);
+    font-weight: normal;
+    font-style: italic;
+  }
+
+  .subtitle {
+    color: #8b6f47;
+    font-size: 10px;
+    letter-spacing: 5px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .stats {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat {
+    background: rgba(26,18,8,0.65);
+    border: 1px solid #5a3a1a;
+    border-radius: 6px;
+    padding: 5px 14px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    min-width: 70px;
+  }
+
+  .stat-label {
+    color: #8b6f47;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: block;
+  }
+
+  .stat-value {
+    color: #f4e8c1;
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  .difficulty {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .diff-btn {
+    background: rgba(26,18,8,0.65);
+    border: 1px solid #5a3a1a;
+    color: #c9a961;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .diff-btn.active {
+    background: linear-gradient(135deg, #d4a574, #8b6f47);
+    color: #1a1208;
+    border-color: #d4a574;
+    box-shadow: 0 0 12px rgba(212,165,116,0.3);
+  }
+
+  .board-wrapper {
+    position: relative;
+    padding: 8px;
+    border-radius: 10px;
+    background:
+      repeating-linear-gradient(92deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 5px),
+      linear-gradient(135deg, #3a2818, #2a1810);
+    box-shadow:
+      0 10px 40px rgba(0,0,0,0.7),
+      0 0 0 1px #8b6f47,
+      inset 0 0 24px rgba(0,0,0,0.4);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    width: min(92vw, 480px);
+    height: min(92vw, 480px);
+    background: #5a3a1a;
+    border: 3px solid #5a3a1a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .cell {
+    background: #f4e8c1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(15px, 4vw, 24px);
+    color: #5a3a1a;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+    font-family: Georgia, serif;
+    border-right: 1px solid #c9a961;
+    border-bottom: 1px solid #c9a961;
+  }
+
+  .cell[data-col="8"] { border-right: none; }
+  .cell[data-row="8"] { border-bottom: none; }
+  .cell.box-right { border-right: 2px solid #5a3a1a; }
+  .cell.box-bottom { border-bottom: 2px solid #5a3a1a; }
+
+  .cell.given { color: #2a1810; font-weight: bold; }
+  .cell.player { color: #b8860b; }
+
+  .cell.related { background: #e0d4a8; }
+  .cell.same-number { background: #f0c878; }
+  .cell.selected {
+    background: #ffd166 !important;
+    box-shadow: inset 0 0 14px rgba(255,200,80,0.6);
+    z-index: 2;
+  }
+  .cell.error {
+    background: #f0c0c0 !important;
+    color: #8b3a3a !important;
+  }
+
+  .cell.flash { animation: cellFlash 0.6s ease-out; }
+  @keyframes cellFlash {
+    0% { box-shadow: inset 0 0 18px 5px rgba(255,209,102,0.9); }
+    100% { box-shadow: inset 0 0 0 0 rgba(255,209,102,0); }
+  }
+
+  .pencil-marks {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    grid-template-rows: repeat(3,1fr);
+    width: 100%; height: 100%;
+    font-size: clamp(7px, 1.5vw, 10px);
+    color: #8b6f47;
+    font-weight: normal;
+  }
+  .pencil-marks span {
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 12px;
+    width: min(92vw, 480px);
+  }
+
+  .num-btn {
+    background: linear-gradient(135deg, #c9a961, #8b6f47);
+    color: #1a1208;
+    border: 1px solid #d4a574;
+    border-radius: 8px;
+    font-size: clamp(18px, 4.5vw, 24px);
+    padding: 12px 4px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    transition: transform 0.08s, opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .num-btn:active { transform: scale(0.92); }
+  .num-btn.done { opacity: 0.3; pointer-events: none; }
+  .num-btn.erase-btn {
+    background: linear-gradient(135deg, #8b6f47, #5a3a1a);
+    color: #f4e8c1;
+    font-size: clamp(16px, 4vw, 20px);
+  }
+
+  .controls-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+    width: min(92vw, 480px);
+  }
+
+  .action-btn {
+    background: rgba(26,18,8,0.7);
+    color: #c9a961;
+    border: 1px solid #5a3a1a;
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 11px 4px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .action-btn.active {
+    background: linear-gradient(135deg, #d4a574, #8b6f47);
+    color: #1a1208;
+  }
+  .action-btn:active { transform: scale(0.95); }
+
+  .modal-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(13,27,42,0.88);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: linear-gradient(135deg, #2a1810, #1a1208);
+    border: 2px solid #d4a574;
+    border-radius: 14px;
+    padding: 32px 40px;
+    text-align: center;
+    max-width: 90vw;
+    box-shadow: 0 0 80px rgba(212,165,116,0.4);
+  }
+  .modal h2 {
+    color: #d4a574;
+    font-size: 30px;
+    margin-bottom: 10px;
+    font-style: italic;
+    letter-spacing: 2px;
+  }
+  .modal p { color: #f4e8c1; margin-bottom: 6px; font-size: 14px; }
+  .modal .time {
+    font-size: 36px; color: #ffd166;
+    margin: 14px 0; font-weight: bold;
+  }
+  .modal button {
+    background: linear-gradient(135deg, #d4a574, #8b6f47);
+    color: #1a1208; border: none; border-radius: 8px;
+    padding: 12px 36px; font-size: 15px; cursor: pointer;
+    font-family: Georgia, serif; margin-top: 8px; letter-spacing: 1px;
+  }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26,18,8,0.92);
+    color: #f4e8c1; padding: 10px 22px;
+    border-radius: 6px; border: 1px solid #8b6f47;
+    z-index: 50; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+    font-size: 13px; letter-spacing: 0.5px;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 400px) {
+    .stat { padding: 4px 10px; min-width: 60px; }
+    .stat-value { font-size: 15px; }
+    .diff-btn { padding: 6px 12px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div class="game-container">
+  <div class="title-line"></div>
+  <h1>Blue Note Sudoku</h1>
+  <div class="subtitle">A Jazz Lounge Puzzle</div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">Time</span>
+      <span class="stat-value" id="timer">00:00</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Mistakes</span>
+      <span class="stat-value" id="mistakes">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Best</span>
+      <span class="stat-value" id="best">--:--</span>
+    </div>
+  </div>
+
+  <div class="difficulty">
+    <button class="diff-btn active" data-diff="easy">Easy</button>
+    <button class="diff-btn" data-diff="medium">Medium</button>
+    <button class="diff-btn" data-diff="hard">Hard</button>
+  </div>
+
+  <div class="board-wrapper">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="numpad" id="numpad"></div>
+
+  <div class="controls-row">
+    <button class="action-btn" id="pencil-btn">Pencil</button>
+    <button class="action-btn" id="hint-btn">Hint (3)</button>
+    <button class="action-btn" id="music-btn">Music: On</button>
+    <button class="action-btn" id="new-btn">New Game</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Encore!</h2>
+    <p id="modal-text">You solved it beautifully.</p>
+    <div class="time" id="modal-time">00:00</div>
+    <button id="modal-btn">Play Again</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// [PP_CONFIG_INJECT]
+const GAME_CONFIG = {
+  "theme": {
+    "title": "Blue Note Sudoku",
+    "background": "#0d1b2a",
+    "cellColor": "#f4e8c1",
+    "givenColor": "#2a1810",
+    "playerColor": "#b8860b",
+    "accent": "#d4a574",
+    "selected": "#ffd166",
+    "related": "#e0d4a8",
+    "sameNumber": "#f0c878",
+    "error": "#8b3a3a",
+    "errorBg": "#f0c0c0",
+    "border": "#5a3a1a",
+    "gridLine": "#c9a961"
+  },
+  "maxHints": 3,
+  "difficulties": {
+    "easy":   { "clues": 40, "maxMistakes": 0 },
+    "medium": { "clues": 32, "maxMistakes": 5 },
+    "hard":   { "clues": 26, "maxMistakes": 3 }
+  },
+  "tempo": 78,
+  "musicVolume": 0.22,
+  "assets": {
+    "background_image": null
+  }
+};
+if (typeof window !== 'undefined') { window.GAME_CONFIG = GAME_CONFIG; }
+// [/PP_CONFIG_INJECT]
+
+// ============ CONSTANTS ============
+const TITLE = (GAME_CONFIG.theme && GAME_CONFIG.theme.title) || 'Blue Note Sudoku';
+const THEME = GAME_CONFIG.theme || {};
+const MAX_HINTS = GAME_CONFIG.maxHints || 3;
+const TEMPO = GAME_CONFIG.tempo || 78;
+const MUSIC_VOLUME = GAME_CONFIG.musicVolume || 0.22;
+const DIFFICULTIES = GAME_CONFIG.difficulties || {
+  easy: { clues: 40, maxMistakes: 0 },
+  medium: { clues: 32, maxMistakes: 5 },
+  hard: { clues: 26, maxMistakes: 3 }
+};
+
+// Background image loader
+const bgImg = new Image();
+if (GAME_CONFIG.assets && GAME_CONFIG.assets.background_image) {
+  bgImg.src = GAME_CONFIG.assets.background_image;
+}
+
+// ============ SUDOKU LOGIC ============
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function isValid(grid, row, col, num) {
+  for (let i = 0; i < 9; i++) {
+    if (grid[row][i] === num) return false;
+    if (grid[i][col] === num) return false;
+  }
+  const br = Math.floor(row / 3) * 3;
+  const bc = Math.floor(col / 3) * 3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      if (grid[br + i][bc + j] === num) return false;
+  return true;
+}
+
+function fillBox(grid, row, col) {
+  const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+  let idx = 0;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      grid[row + i][col + j] = nums[idx++];
+}
+
+function solveSudoku(grid) {
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (grid[row][col] === 0) {
+        const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+        for (const num of nums) {
+          if (isValid(grid, row, col, num)) {
+            grid[row][col] = num;
+            if (solveSudoku(grid)) return true;
+            grid[row][col] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function generatePuzzle(difficulty) {
+  const grid = Array(9).fill().map(() => Array(9).fill(0));
+  fillBox(grid, 0, 0);
+  fillBox(grid, 3, 3);
+  fillBox(grid, 6, 6);
+  solveSudoku(grid);
+  const solution = grid.map(r => [...r]);
+  const clues = DIFFICULTIES[difficulty].clues;
+  const toRemove = 81 - clues;
+  const positions = shuffle(Array.from({ length: 81 }, (_, i) => i));
+  for (let i = 0; i < toRemove; i++) {
+    const r = Math.floor(positions[i] / 9);
+    const c = positions[i] % 9;
+    grid[r][c] = 0;
+  }
+  return { puzzle: grid, solution };
+}
+
+// ============ JAZZ MUSIC ENGINE ============
+class JazzEngine {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.filter = null;
+    this.playing = false;
+    this.bar = 0;
+    this.intensity = 0.35;
+    this.nextBarTime = 0;
+    this.lookahead = 25;
+    this.scheduleAhead = 0.15;
+    this.timer = null;
+  }
+
+  init() {
+    if (this.ctx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = MUSIC_VOLUME;
+      this.filter = this.ctx.createBiquadFilter();
+      this.filter.type = 'lowpass';
+      this.filter.frequency.value = 2500;
+      this.filter.Q.value = 0.4;
+      this.master.connect(this.filter);
+      this.filter.connect(this.ctx.destination);
+    } catch (e) { console.warn('Audio init failed', e); }
+  }
+
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  }
+
+  start() {
+    this.init();
+    if (!this.ctx) return;
+    this.resume();
+    this.playing = true;
+    this.bar = 0;
+    this.nextBarTime = this.ctx.currentTime + 0.1;
+    this.scheduler();
+  }
+
+  stop() {
+    this.playing = false;
+    if (this.timer) clearTimeout(this.timer);
+  }
+
+  setIntensity(v) {
+    this.intensity = Math.max(0.2, Math.min(1, v));
+  }
+
+  scheduler() {
+    if (!this.playing || !this.ctx) return;
+    const barDur = (60 / TEMPO) * 4;
+    while (this.nextBarTime < this.ctx.currentTime + this.scheduleAhead) {
+      this.scheduleBar(this.bar, this.nextBarTime);
+      this.nextBarTime += barDur;
+      this.bar = (this.bar + 1) % 12;
+    }
+    this.timer = setTimeout(() => this.scheduler(), this.lookahead);
+  }
+
+  // 12-bar blues in Bb: Bb7 x4, Eb7 x2, Bb7 x2, F7, Eb7, Bb7, F7
+  getProgression() {
+    const Bb = 116.54, Eb = 155.56, F = 174.61;
+    const Bb7 = [233.08, 293.66, 349.23, 415.30];
+    const Eb7 = [311.13, 392.00, 466.16, 554.37];
+    const F7  = [349.23, 440.00, 523.25, 622.25];
+    return [
+      { bass: Bb, chord: Bb7 }, { bass: Bb, chord: Bb7 },
+      { bass: Bb, chord: Bb7 }, { bass: Bb, chord: Bb7 },
+      { bass: Eb, chord: Eb7 }, { bass: Eb, chord: Eb7 },
+      { bass: Bb, chord: Bb7 }, { bass: Bb, chord: Bb7 },
+      { bass: F,  chord: F7  }, { bass: Eb, chord: Eb7 },
+      { bass: Bb, chord: Bb7 }, { bass: F,  chord: F7  },
+    ];
+  }
+
+  scheduleBar(bar, time) {
+    const prog = this.getProgression();
+    const chord = prog[bar];
+    const beat = 60 / TEMPO;
+    const swing = beat * 0.66;
+
+    // Walking bass: root, fifth, root, fifth
+    this.playBass(chord.bass, time, beat * 0.9, 0.5);
+    this.playBass(chord.bass * 1.5, time + beat, beat * 0.9, 0.4);
+    this.playBass(chord.bass, time + beat * 2, beat * 0.9, 0.5);
+    this.playBass(chord.bass * 1.5, time + beat * 3, beat * 0.9, 0.4);
+
+    // Piano chord stabs on swung off-beats
+    const pg = 0.14 * this.intensity;
+    if (this.intensity > 0.3) {
+      this.playChord(chord.chord, time + swing, 0.32, pg);
+      this.playChord(chord.chord, time + beat * 2 + swing, 0.32, pg);
+    }
+    if (this.intensity > 0.55) {
+      this.playChord(chord.chord, time + beat + swing, 0.22, pg * 0.7);
+      this.playChord(chord.chord, time + beat * 3 + swing, 0.22, pg * 0.7);
+    }
+
+    // Brush drums: shuffle pattern
+    const bg = 0.07;
+    for (let b = 0; b < 4; b++) {
+      this.playBrush(time + b * beat, bg);
+      this.playBrush(time + b * beat + swing, bg * 0.55);
+    }
+  }
+
+  playBass(freq, time, duration, gain) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const env = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(gain, time + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    osc.connect(env); env.connect(this.master);
+    osc.start(time); osc.stop(time + duration + 0.05);
+  }
+
+  playChord(freqs, time, duration, gain) {
+    if (!this.ctx) return;
+    freqs.forEach((f, i) => {
+      const osc = this.ctx.createOscillator();
+      const env = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const g = (gain / freqs.length) * (i === 0 ? 1.3 : 0.8);
+      env.gain.setValueAtTime(0, time);
+      env.gain.linearRampToValueAtTime(g, time + 0.008);
+      env.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      osc.connect(env); env.connect(this.master);
+      osc.start(time); osc.stop(time + duration + 0.05);
+    });
+  }
+
+  playBrush(time, gain) {
+    if (!this.ctx) return;
+    const len = Math.floor(this.ctx.sampleRate * 0.07);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++)
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buf;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 5000;
+    const env = this.ctx.createGain(); env.gain.value = gain;
+    noise.connect(hp); hp.connect(env); env.connect(this.master);
+    noise.start(time); noise.stop(time + 0.07);
+  }
+
+  // Bb pentatonic for placement feedback
+  playPianoNote(num) {
+    if (!this.ctx) return;
+    this.resume();
+    const scale = [233.08, 261.63, 293.66, 311.13, 349.23, 392.00, 466.16, 523.25, 587.33];
+    const freq = scale[(num - 1)] || 440;
+    const t = this.ctx.currentTime;
+    [1, 2].forEach((mult, i) => {
+      const osc = this.ctx.createOscillator();
+      const env = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq * mult;
+      const g = i === 0 ? 0.28 : 0.1;
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(g, t + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(env); env.connect(this.master);
+      osc.start(t); osc.stop(t + 0.65);
+    });
+  }
+
+  playRiff() {
+    if (!this.ctx) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const notes = [349.23, 392.00, 466.16, 523.25, 587.33, 523.25, 466.16, 587.33];
+    notes.forEach((f, i) => {
+      const osc = this.ctx.createOscillator();
+      const env = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const nt = t + i * 0.08;
+      env.gain.setValueAtTime(0, nt);
+      env.gain.linearRampToValueAtTime(0.18, nt + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, nt + 0.22);
+      osc.connect(env); env.connect(this.master);
+      osc.start(nt); osc.stop(nt + 0.25);
+    });
+  }
+
+  playBrassChord() {
+    if (!this.ctx) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const chord = [233.08, 293.66, 349.23, 466.16, 587.33];
+    chord.forEach(f => {
+      const osc = this.ctx.createOscillator();
+      const env = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = f;
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.1, t + 0.05);
+      env.gain.linearRampToValueAtTime(0.07, t + 0.4);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 2);
+      osc.connect(env); env.connect(this.master);
+      osc.start(t); osc.stop(t + 2);
+    });
+  }
+}
+
+const jazz = new JazzEngine();
+
+// ============ PARTICLE SYSTEM ============
+class ParticleSystem {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.particles = [];
+    this.notes = ['♪', '♫', '♬', '♩', '♭', '♯'];
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this.animate();
+  }
+
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  }
+
+  spawn(x, y, count = 1) {
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x: x !== undefined ? x : Math.random() * this.canvas.width,
+        y: y !== undefined ? y : this.canvas.height + 20,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.2 - Math.random() * 0.5,
+        note: this.notes[Math.floor(Math.random() * this.notes.length)],
+        size: 14 + Math.random() * 18,
+        alpha: 0.12 + Math.random() * 0.22,
+        life: 1,
+        rotation: (Math.random() - 0.5) * 0.4,
+        rotSpeed: (Math.random() - 0.5) * 0.008,
+        color: Math.random() > 0.5 ? '#d4a574' : '#c9a961'
+      });
+    }
+  }
+
+  animate() {
+    const ctx = this.ctx;
+    const w = this.canvas.width, h = this.canvas.height;
+
+    // Background: image or procedural jazz-club backdrop
+    if (bgImg.complete && bgImg.naturalWidth) {
+      ctx.drawImage(bgImg, 0, 0, w, h);
+    } else {
+      const grad = ctx.createRadialGradient(w * 0.5, h * 0.35, 0, w * 0.5, h * 0.35, w * 0.85);
+      grad.addColorStop(0, '#1e3048');
+      grad.addColorStop(0.4, '#0d1b2a');
+      grad.addColorStop(1, '#040810');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Warm spotlight
+      const spot = ctx.createRadialGradient(w * 0.5, h * 0.25, 0, w * 0.5, h * 0.25, w * 0.45);
+      spot.addColorStop(0, 'rgba(212,165,116,0.1)');
+      spot.addColorStop(1, 'rgba(212,165,116,0)');
+      ctx.fillStyle = spot;
+      ctx.fillRect(0, 0, w, h);
+
+      // Vignette
+      const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.3, w * 0.5, h * 0.5, w * 0.75);
+      vig.addColorStop(0, 'rgba(0,0,0,0)');
+      vig.addColorStop(1, 'rgba(0,0,0,0.45)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // Ambient particle spawn
+    if (Math.random() < 0.045) this.spawn();
+
+    // Update + draw
+    this.particles = this.particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      p.life -= 0.0022;
+      if (p.life <= 0 || p.y < -30) return false;
+      ctx.save();
+      ctx.globalAlpha = p.alpha * p.life;
+      ctx.fillStyle = p.color;
+      ctx.font = `${p.size}px Georgia, serif`;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillText(p.note, 0, 0);
+      ctx.restore();
+      return true;
+    });
+
+    requestAnimationFrame(() => this.animate());
+  }
+}
+
+const particles = new ParticleSystem(document.getElementById('bg-canvas'));
+
+// ============ GAME STATE ============
+let state = {
+  puzzle: null, solution: null, current: null,
+  pencilMarks: null, selected: null,
+  pencilMode: false, mistakes: 0,
+  startTime: 0, elapsed: 0, timerInterval: null,
+  difficulty: 'easy', won: false,
+  musicOn: true, hintsLeft: MAX_HINTS
+};
+
+// ============ GAME FUNCTIONS ============
+function initGame(difficulty) {
+  state.difficulty = difficulty;
+  const { puzzle, solution } = generatePuzzle(difficulty);
+  state.puzzle = puzzle;
+  state.solution = solution;
+  state.current = puzzle.map(r => [...r]);
+  state.pencilMarks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+  state.selected = null;
+  state.pencilMode = false;
+  state.mistakes = 0;
+  state.startTime = Date.now();
+  state.elapsed = 0;
+  state.won = false;
+  state.hintsLeft = MAX_HINTS;
+
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTimer, 1000);
+
+  document.getElementById('pencil-btn').classList.remove('active');
+  updateHintButton();
+  renderBoard();
+  renderNumpad();
+  updateStats();
+  updateBestTime();
+  updateTimer();
+  jazz.setIntensity(0.35);
+}
+
+function updateTimer() {
+  if (state.won) return;
+  state.elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const m = Math.floor(state.elapsed / 60).toString().padStart(2, '0');
+  const s = (state.elapsed % 60).toString().padStart(2, '0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+}
+
+function getMaxMistakes() {
+  return DIFFICULTIES[state.difficulty].maxMistakes || 0;
+}
+
+function updateStats() {
+  const max = getMaxMistakes();
+  document.getElementById('mistakes').textContent = max > 0
+    ? `${state.mistakes}/${max}` : `${state.mistakes}`;
+}
+
+function updateBestTime() {
+  const best = localStorage.getItem('bluenote_best_' + state.difficulty);
+  if (best) {
+    const m = Math.floor(best / 60).toString().padStart(2, '0');
+    const s = (best % 60).toString().padStart(2, '0');
+    document.getElementById('best').textContent = `${m}:${s}`;
+  } else {
+    document.getElementById('best').textContent = '--:--';
+  }
+}
+
+function updateHintButton() {
+  document.getElementById('hint-btn').textContent = `Hint (${state.hintsLeft})`;
+  document.getElementById('hint-btn').style.opacity = state.hintsLeft > 0 ? '1' : '0.4';
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      if ((c + 1) % 3 === 0 && c !== 8) cell.classList.add('box-right');
+      if ((r + 1) % 3 === 0 && r !== 8) cell.classList.add('box-bottom');
+
+      const val = state.current[r][c];
+      const given = state.puzzle[r][c] !== 0;
+
+      if (val !== 0) {
+        cell.textContent = val;
+        cell.classList.add(given ? 'given' : 'player');
+        if (!given && val !== state.solution[r][c]) {
+          cell.classList.add('error');
+        }
+      } else if (state.pencilMarks[r][c].size > 0) {
+        const pm = document.createElement('div');
+        pm.className = 'pencil-marks';
+        for (let n = 1; n <= 9; n++) {
+          const span = document.createElement('span');
+          span.textContent = state.pencilMarks[r][c].has(n) ? n : '';
+          pm.appendChild(span);
+        }
+        cell.appendChild(pm);
+      }
+
+      cell.addEventListener('click', () => selectCell(r, c));
+      board.appendChild(cell);
+    }
+  }
+  highlightRelated();
+}
+
+function renderNumpad() {
+  const numpad = document.getElementById('numpad');
+  numpad.innerHTML = '';
+  const counts = Array(10).fill(0);
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 9; c++)
+      if (state.current[r][c] !== 0 && state.current[r][c] === state.solution[r][c])
+        counts[state.current[r][c]]++;
+
+  for (let n = 1; n <= 9; n++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    btn.textContent = n;
+    if (counts[n] >= 9) btn.classList.add('done');
+    btn.addEventListener('click', () => placeNumber(n));
+    numpad.appendChild(btn);
+  }
+  const erase = document.createElement('button');
+  erase.className = 'num-btn erase-btn';
+  erase.textContent = '⌫';
+  erase.addEventListener('click', () => placeNumber(0));
+  numpad.appendChild(erase);
+}
+
+function selectCell(r, c) {
+  state.selected = { r, c };
+  highlightRelated();
+}
+
+function highlightRelated() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.classList.remove('selected', 'related', 'same-number');
+  });
+  if (!state.selected) return;
+  const { r, c } = state.selected;
+  const selVal = state.current[r][c];
+  const br = Math.floor(r / 3) * 3;
+  const bc = Math.floor(c / 3) * 3;
+  document.querySelectorAll('.cell').forEach(cell => {
+    const cr = +cell.dataset.row;
+    const cc = +cell.dataset.col;
+    if (cr === r && cc === c) cell.classList.add('selected');
+    else if (cr === r || cc === c || (cr >= br && cr < br + 3 && cc >= bc && cc < bc + 3))
+      cell.classList.add('related');
+    if (selVal !== 0 && state.current[cr][cc] === selVal && !(cr === r && cc === c))
+      cell.classList.add('same-number');
+  });
+}
+
+function placeNumber(num) {
+  if (!state.selected || state.won) return;
+  const { r, c } = state.selected;
+  if (state.puzzle[r][c] !== 0) return;
+
+  // Pencil mode
+  if (state.pencilMode && num !== 0) {
+    if (state.current[r][c] !== 0) state.current[r][c] = 0;
+    if (state.pencilMarks[r][c].has(num)) state.pencilMarks[r][c].delete(num);
+    else state.pencilMarks[r][c].add(num);
+    renderBoard();
+    return;
+  }
+
+  state.pencilMarks[r][c].clear();
+
+  // Erase
+  if (num === 0) {
+    state.current[r][c] = 0;
+    renderBoard();
+    renderNumpad();
+    return;
+  }
+
+  state.current[r][c] = num;
+
+  if (num === state.solution[r][c]) {
+    // Correct placement
+    jazz.init(); jazz.resume();
+    jazz.playPianoNote(num);
+    jazz.setIntensity(0.6);
+    setTimeout(() => { if (!state.won) jazz.setIntensity(0.4); }, 2500);
+    if (navigator.vibrate) navigator.vibrate(25);
+    removePencilMarks(r, c, num);
+    checkCompletions(r, c);
+    // Particles at cell
+    const cellEl = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+    if (cellEl) {
+      const rect = cellEl.getBoundingClientRect();
+      particles.spawn(rect.left + rect.width / 2, rect.top + rect.height / 2, 3);
+    }
+  } else {
+    // Wrong placement
+    state.mistakes++;
+    updateStats();
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+    const max = getMaxMistakes();
+    if (max > 0 && state.mistakes >= max) {
+      renderBoard();
+      renderNumpad();
+      gameOver();
+      return;
+    }
+    showToast('Not quite — try again');
+  }
+
+  renderBoard();
+  renderNumpad();
+  if (checkWin()) win();
+}
+
+function removePencilMarks(r, c, num) {
+  for (let i = 0; i < 9; i++) {
+    state.pencilMarks[r][i].delete(num);
+    state.pencilMarks[i][c].delete(num);
+  }
+  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      state.pencilMarks[br + i][bc + j].delete(num);
+}
+
+function checkCompletions(r, c) {
+  let rowDone = true, colDone = true, boxDone = true;
+  for (let i = 0; i < 9; i++) {
+    if (state.current[r][i] !== state.solution[r][i]) rowDone = false;
+    if (state.current[i][c] !== state.solution[i][c]) colDone = false;
+  }
+  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      if (state.current[br + i][bc + j] !== state.solution[br + i][bc + j]) boxDone = false;
+
+  if (rowDone || colDone || boxDone) {
+    jazz.init(); jazz.resume();
+    jazz.playRiff();
+    flashSection(r, c, rowDone, colDone, boxDone);
+  }
+}
+
+function flashSection(r, c, row, col, box) {
+  document.querySelectorAll('.cell').forEach(cell => {
+    const cr = +cell.dataset.row, cc = +cell.dataset.col;
+    let flash = false;
+    if (row && cr === r) flash = true;
+    if (col && cc === c) flash = true;
+    if (box) {
+      const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+      if (cr >= br && cr < br + 3 && cc >= bc && cc < bc + 3) flash = true;
+    }
+    if (flash) {
+      cell.classList.add('flash');
+      setTimeout(() => cell.classList.remove('flash'), 600);
+    }
+  });
+}
+
+function checkWin() {
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 9; c++)
+      if (state.current[r][c] !== state.solution[r][c]) return false;
+  return true;
+}
+
+function win() {
+  state.won = true;
+  clearInterval(state.timerInterval);
+  jazz.init(); jazz.resume();
+  jazz.playBrassChord();
+  jazz.setIntensity(0.85);
+
+  const best = localStorage.getItem('bluenote_best_' + state.difficulty);
+  const isNewBest = !best || state.elapsed < parseInt(best);
+  if (isNewBest) localStorage.setItem('bluenote_best_' + state.difficulty, state.elapsed);
+
+  // Celebration particles
+  for (let i = 0; i < 45; i++) {
+    setTimeout(() => {
+      particles.spawn(Math.random() * window.innerWidth, window.innerHeight + 10, 2);
+    }, i * 40);
+  }
+
+  setTimeout(() => {
+    const m = Math.floor(state.elapsed / 60).toString().padStart(2, '0');
+    const s = (state.elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('modal-title').textContent = 'Encore!';
+    document.getElementById('modal-text').textContent = isNewBest
+      ? 'A new personal best — magnificent!' : 'You solved it beautifully.';
+    document.getElementById('modal-time').textContent = `${m}:${s}`;
+    document.getElementById('modal').classList.add('show');
+  }, 1600);
+}
+
+function gameOver() {
+  state.won = true;
+  clearInterval(state.timerInterval);
+  document.getElementById('modal-title').textContent = 'Take Five';
+  document.getElementById('modal-text').textContent = 'Too many misses. Try again?';
+  document.getElementById('modal-time').textContent = '';
+  document.getElementById('modal').classList.add('show');
+}
+
+function giveHint() {
+  if (state.won || state.hintsLeft <= 0) return;
+  let target = null;
+  if (state.selected) {
+    const { r, c } = state.selected;
+    if (state.puzzle[r][c] === 0 && state.current[r][c] !== state.solution[r][c])
+      target = { r, c };
+  }
+  if (!target) {
+    const candidates = [];
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (state.puzzle[r][c] === 0 && state.current[r][c] !== state.solution[r][c])
+          candidates.push({ r, c });
+    if (candidates.length === 0) return;
+    target = candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  state.hintsLeft--;
+  state.current[target.r][target.c] = state.solution[target.r][target.c];
+  state.pencilMarks[target.r][target.c].clear();
+  jazz.init(); jazz.resume();
+  jazz.playPianoNote(state.solution[target.r][target.c]);
+  removePencilMarks(target.r, target.c, state.solution[target.r][target.c]);
+  state.selected = target;
+  renderBoard();
+  renderNumpad();
+  updateHintButton();
+  checkCompletions(target.r, target.c);
+  if (checkWin()) win();
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ============ EVENT HANDLERS ============
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    initGame(btn.dataset.diff);
+  });
+});
+
+document.getElementById('pencil-btn').addEventListener('click', () => {
+  state.pencilMode = !state.pencilMode;
+  document.getElementById('pencil-btn').classList.toggle('active', state.pencilMode);
+});
+
+document.getElementById('hint-btn').addEventListener('click', giveHint);
+
+document.getElementById('music-btn').addEventListener('click', () => {
+  state.musicOn = !state.musicOn;
+  document.getElementById('music-btn').textContent = 'Music: ' + (state.musicOn ? 'On' : 'Off');
+  jazz.init();
+  if (state.musicOn) jazz.start();
+  else jazz.stop();
+});
+
+document.getElementById('new-btn').addEventListener('click', () => initGame(state.difficulty));
+
+document.getElementById('modal-btn').addEventListener('click', () => {
+  document.getElementById('modal').classList.remove('show');
+  initGame(state.difficulty);
+});
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+  if (!state.selected) {
+    if (e.key.startsWith('Arrow')) { selectCell(0, 0); e.preventDefault(); }
+    return;
+  }
+  let { r, c } = state.selected;
+  if (e.key === 'ArrowUp') { r = Math.max(0, r - 1); e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { r = Math.min(8, r + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { c = Math.max(0, c - 1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { c = Math.min(8, c + 1); e.preventDefault(); }
+  else if (e.key >= '1' && e.key <= '9') { placeNumber(parseInt(e.key)); return; }
+  else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { placeNumber(0); return; }
+  else if (e.key === 'p' || e.key === 'P') {
+    state.pencilMode = !state.pencilMode;
+    document.getElementById('pencil-btn').classList.toggle('active', state.pencilMode);
+    return;
+  } else return;
+  selectCell(r, c);
+});
+
+// Start audio on first interaction
+function ensureAudio() {
+  jazz.init();
+  jazz.resume();
+  if (state.musicOn && !jazz.playing) jazz.start();
+}
+['click', 'touchstart', 'keydown'].forEach(evt => {
+  document.addEventListener(evt, ensureAudio, { once: true });
+});
+
+// Initialize game
+initGame('easy');
+</script>
+</body>
+</html>
