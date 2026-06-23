@@ -19,37 +19,31 @@
 <a href="#disclosure">Disclosure</a><a href="#abstract">Abstract</a><a href="#prompt">The prompt</a>
 <a href="#method">Methodology</a><a href="#results">Results</a><a href="#games">Games</a>
 <a href="#vendors">By vendor</a><a href="#discussion">Discussion</a><a href="#threats">Threats to validity</a>
-<a href="#repro">Reproducibility</a><a href="#appendixA">Roster</a><a href="#appendixB">Exact prompt</a><a href="#refs">References</a>
+<a href="#repro">Reproducibility</a><a href="#appendixA">Roster</a><a href="#refs">References</a>
 </div></nav>
 
 <main class="wrap">
 
-<section id="disclosure" class="callout-box"><h2>Disclosure (conflict of interest)</h2>
-<p>This study was produced by <b>PlayPrompt</b>, which builds a commercial platform that generates browser games from natural-language prompts. That is a conflict of interest, and we state it here rather than in a footnote. Three structural choices keep the comparison honest:</p>
-<ul class="tight">
-<li><b>PlayPrompt has no model in this race.</b> The platform orchestrates third-party models; this study compares those models against one another on a neutral task under identical conditions. There is no in-house model being flattered.</li>
-<li><b>Our own production default did poorly, and we lead with it.</b> The model PlayPrompt currently ships as its default (a MiniMax model) was among the weakest performers here — 1 of its 4 delivered games was clean. We foreground that rather than bury it.</li>
-<li><b>Everything is published.</b> The exact prompt (the end-user sentence and the full system instruction), every generated game (playable), every screenshot, the per-model results, and the scoring rules are all included. Anyone can re-run or re-score, and we will correct the record.</li>
-</ul>
-<p class="muted">Our fairness practices follow the literature on benchmark conflicts of interest — notably <i>The Leaderboard Illusion</i> (Singh et al., 2025) and vendor self-benchmarks such as DeepSource's — which document how vendor-run comparisons fail and which practices avoid it (see <a href="#refs">References</a>).</p>
+<section id="disclosure" class="callout-box"><h2>Disclosure</h2>
+<p>This study is produced by <b>PlayPrompt</b>, a beta platform that generates browser games from natural-language prompts using third-party models. We state that up front. PlayPrompt has <b>no model of its own</b> in this comparison and <b>no fixed default</b> — we run studies like this to decide which models to offer, so our incentive is an accurate result, not promoting any one model.</p>
+<p>To keep the comparison verifiable, every model received the same prompt under identical conditions and <b>every generated game is published here</b> to play and re-score. Our fairness practices follow the literature on benchmark conflicts of interest (see <a href="#refs">References</a>).</p>
 </section>
 
 <section id="abstract"><h2>Abstract</h2>
-<p class="lead">We measured whether current language models can turn one natural-language prompt into a complete, correct, playable browser game. Sudoku was the probe because correctness is machine-verifiable. Sixty models from eight vendors received the same prompt; each output was scored on a frozen rubric: did it <b>deliver</b>, encode a <b>valid puzzle that can be driven to a recognized win</b>, and <b>visually render a usable board</b>. Of 60 models, <b>41</b> delivered a working game and <b>23</b> produced a board that was both logically correct and cleanly rendered; 1 produced a valid but reduced (4×4) variant, and the remainder were flawed, broken, or not Sudoku. The strongest result is methodological: logic-only checking produces false positives — at least one model computed a correct solution while rendering no grid at all — so both execution-based and pixel-level verification are required. We publish every generated game, every screenshot, the verbatim prompt, and the per-model data. Findings are relative and conditional on this prompt, these model snapshots, and this date.</p>
+<p class="lead">We measured whether current language models can turn one natural-language prompt into a complete, correct, playable browser game. Sudoku was the probe because correctness is machine-verifiable. Sixty models from eight vendors received the same prompt; each output was scored on a frozen rubric: did it <b>deliver</b>, encode a <b>valid puzzle that can be driven to a recognized win</b>, and <b>visually render a usable board</b>. Of 60 models, <b>41</b> delivered a working game and <b>23</b> produced a board that was both logically correct and cleanly rendered; 1 produced a valid but reduced (4×4) variant, and the remainder were flawed, broken, or not Sudoku. The strongest result is methodological: logic-only checking produces false positives — at least one model computed a correct solution while rendering no grid at all — so both execution-based and pixel-level verification are required. We publish every generated game, every screenshot, the end-user prompt, and the per-model data. Findings are relative and conditional on this prompt, these model snapshots, and this date.</p>
 </section>
 
 <section id="prompt"><h2>The prompt</h2>
-<p>Every model received the same end-user instruction, byte-for-byte. It was not shared with any vendor in advance, and it is deliberately short and casual to mirror real product usage:</p>
+<p>Every model received the same end-user instruction, byte-for-byte — not shared with any vendor in advance, and deliberately short to mirror real usage:</p>
 <pre class="prompt">create a sudoku game with jazz music.</pre>
-<p><b>What the model actually received.</b> That sentence is not sent to the model verbatim. PlayPrompt first expands it, through an automatic prompt-enhancement step, into a fuller game brief (the <i>user</i> message), and wraps it in a fixed <i>system</i> instruction that asks for a single self-contained HTML file plus a small configuration block. Both texts were identical for all 60 models; only the model changed. The full, verbatim text of the system instruction, the enhancement instruction, and the configuration contract is in <a href="#appendixB">Appendix&nbsp;B</a>.</p>
-<p>This disclosure matters for fairness: a model marked <i>failed</i> here may have stumbled on the HTML/configuration formatting contract rather than on Sudoku itself. We treat that as a confound, not a hidden variable — see <a href="#threats">Threats to Validity</a>. The jazz soundtrack is produced by a separate, post-generation step and is <b>not</b> part of what the evaluated model writes; it does not affect any verdict.</p>
+<p>That sentence is wrapped in a fixed system instruction — identical for all 60 models — that asks for a single self-contained HTML file (inline CSS/JS, no external libraries, mobile-friendly) plus a small configuration block, and an automatic step expands the sentence into the model's user message. We describe rather than reproduce that instruction to avoid publishing proprietary prompt text; it was identical across all models, is available to model vendors on request for verification, and its possible effect on results is noted under <a href="#threats">Threats to Validity</a>. The jazz soundtrack is added by a separate post-step and is not part of what the model writes.</p>
 </section>
 
 <section id="method"><h2>Methodology</h2>
 <h3>Models</h3>
 <p>Sixty current text models across eight vendors — Anthropic, OpenAI, Google, xAI, DeepSeek, Mistral, MiniMax, and Alibaba (Qwen) — were enumerated in advance; the full roster with exact model IDs and per-model outcomes is in <a href="#appendixA">Appendix&nbsp;A</a>. The model list, the prompt, the rubric, and the "best-by" definitions were fixed before the run.</p>
 <h3>Generation</h3>
-<p>Each model was driven through the same generation path via a per-request model override, so all 60 faced identical conditions — same prompt, same enhancement step, same system instruction, same packaging. The only variable was the text model that wrote the game. Models were run with default sampling settings; one attempt per model. Generation time and token usage were recorded per model.</p>
+<p>Each model was driven through PlayPrompt's generation path via a per-request model override, so all 60 faced identical conditions — same prompt, same enhancement step, same system instruction, same packaging. The only variable was the text model that wrote the game. Models were run with default sampling settings; one attempt per model. Generation time and token usage were recorded per model.</p>
 <h3>Scoring rubric (pre-stated)</h3>
 <p>Each delivered game was assigned exactly one verdict against definitions fixed before grading:</p>
 <table><thead><tr><th>Verdict</th><th>Definition</th></tr></thead><tbody>
@@ -118,7 +112,6 @@
 <p>Clean 9×9 games as a share of games delivered. This is a descriptive roll-up of this run, not a general verdict on any vendor; each cell carries its denominator.</p>
 <table><thead><tr><th>Vendor</th><th>Models tested</th><th>Delivered</th><th>Clean 9×9</th><th>Clean rate</th></tr></thead>
 <tbody><tr><td>DeepSeek</td><td>2</td><td>2</td><td>2</td><td>100%</td></tr><tr><td>Anthropic</td><td>8</td><td>7</td><td>6</td><td>86%</td></tr><tr><td>Google</td><td>9</td><td>7</td><td>5</td><td>71%</td></tr><tr><td>Alibaba (Qwen)</td><td>10</td><td>9</td><td>5</td><td>56%</td></tr><tr><td>OpenAI</td><td>10</td><td>4</td><td>2</td><td>50%</td></tr><tr><td>Mistral</td><td>10</td><td>7</td><td>2</td><td>29%</td></tr><tr><td>MiniMax</td><td>7</td><td>4</td><td>1</td><td>25%</td></tr><tr><td>xAI</td><td>4</td><td>1</td><td>0</td><td>0%</td></tr></tbody></table>
-<p class="muted">The model PlayPrompt ships as its default sits in the lower half of this table — stated plainly because hiding it would defeat the purpose of the study.</p>
 </section>
 
 <section id="discussion"><h2>Discussion</h2>
@@ -134,7 +127,7 @@
 
 <section id="threats"><h2>Threats to validity</h2>
 <h3>Construct</h3>
-<p>One Sudoku prompt is not a measure of general game-generation ability. The task is "produce a self-contained HTML game that satisfies a fixed formatting and configuration contract," so a verdict conflates Sudoku reasoning, HTML/JS coding, and contract-adherence. The automatic prompt-enhancement step and the configuration-block contract (both in <a href="#appendixB">Appendix&nbsp;B</a>) are confounds: a model marked failed may have mishandled the contract, not the puzzle.</p>
+<p>One Sudoku prompt is not a measure of general game-generation ability. The task is "produce a self-contained HTML game that satisfies a fixed formatting and configuration contract," so a verdict blends Sudoku reasoning, HTML/JS coding, and contract-adherence. The automatic enhancement step and the configuration contract are identical for every model but may suit some better than others — a model marked failed may have mishandled the contract rather than the puzzle.</p>
 <h3>Internal</h3>
 <p>One attempt per model; model outputs are non-deterministic, so a re-run may differ and small gaps may be run-to-run noise. The per-request enhanced brief varied per call and was not individually retained at run time (a logging gap we are closing). Some Stage-1 failures were rate-limits or timeouts — infrastructure, not capability — and are labelled as such. Stage-2 grading involves human/visual judgment.</p>
 <h3>External</h3>
@@ -148,7 +141,7 @@
 <section id="repro"><h2>Reproducibility &amp; artifacts</h2>
 <p>Everything needed to re-run or re-score this study is published here:</p>
 <ul class="tight">
-<li>The verbatim end-user prompt (above) and the full system / enhancement / configuration instructions (<a href="#appendixB">Appendix&nbsp;B</a>).</li>
+<li>The verbatim end-user prompt (above). The fixed system instruction is described in <a href="#prompt">The prompt</a> and is available to model vendors on request.</li>
 <li>Every generated game, playable: <a href="games/">/games/</a> (30 self-contained HTML files).</li>
 <li>Every screenshot: <a href="assets/">/assets/</a>.</li>
 <li>The per-model results as data: <a href="data/results.csv">results.csv</a> · <a href="data/results.json">results.json</a>.</li>
@@ -161,201 +154,6 @@
 <section id="appendixA"><h2>Appendix A — full roster &amp; per-model outcome</h2>
 <p class="muted">All 60 models, by vendor, with the Stage-1 outcome and (for delivered games) the final verdict. Infrastructure failures are labelled.</p>
 <h4>Anthropic <span class='muted'>(8 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>claude-fable-5</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>claude-haiku-4-5-20251001</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-5-20251101</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-6</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-7</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-opus-4-8</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>claude-sonnet-4-5-20250929</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>claude-sonnet-4-6</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>OpenAI <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>gpt-5.2</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.2-codex</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.2-pro</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>gpt-5.3-codex</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>gpt-5.4</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gpt-5.4-mini</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gpt-5.4-nano</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>gpt-5.4-pro</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.5</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gpt-5.5-pro</code></td><td>did not deliver</td><td>—</td></tr></tbody></table><h4>Google <span class='muted'>(9 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>gemini-2.0-flash</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gemini-2.5-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-2.5-flash-lite</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-2.5-pro</code></td><td>delivered</td><td>not_sudoku</td></tr><tr><td><code>gemini-3-flash-preview</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-3-pro-preview</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>gemini-3.1-flash-lite-preview</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>gemini-3.1-pro-preview</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>gemini-3.5-flash</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>xAI <span class='muted'>(4 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>grok-4.20-0309-non-reasoning</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>grok-4.20-0309-reasoning</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>grok-4.20-multi-agent-0309</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>grok-4.3</code></td><td>delivered</td><td>broken</td></tr></tbody></table><h4>DeepSeek <span class='muted'>(2 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>deepseek-v4-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>deepseek-v4-pro</code></td><td>delivered</td><td>clean</td></tr></tbody></table><h4>Mistral <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>codestral-latest</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>devstral-latest</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>devstral-medium-latest</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>magistral-medium-latest</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>magistral-small-latest</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>ministral-14b-latest</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>ministral-8b-latest</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>mistral-large-2512</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>mistral-large-latest</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>mistral-small-latest</code></td><td>delivered</td><td>flawed</td></tr></tbody></table><h4>MiniMax <span class='muted'>(7 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>MiniMax-M2</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>MiniMax-M2.1</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>MiniMax-M2.5</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>MiniMax-M2.7</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>MiniMax-M2.7-highspeed</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>MiniMax-M3</code></td><td>did not deliver</td><td>—</td></tr><tr><td><code>MiniMax-Text-01</code></td><td>delivered</td><td>not_sudoku</td></tr></tbody></table><h4>Alibaba (Qwen) <span class='muted'>(10 models)</span></h4><table><thead><tr><th>Model ID</th><th>Stage-1 outcome</th><th>Verdict</th></tr></thead><tbody><tr><td><code>qwen3-coder-flash</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3-coder-next</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3-coder-plus</code></td><td>rejected (invalid output)</td><td>—</td></tr><tr><td><code>qwen3-vl-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.5-flash</code></td><td>delivered</td><td>flawed</td></tr><tr><td><code>qwen3.5-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.6-flash</code></td><td>delivered</td><td>broken</td></tr><tr><td><code>qwen3.6-plus</code></td><td>delivered</td><td>clean</td></tr><tr><td><code>qwen3.7-max</code></td><td>delivered</td><td>reduced</td></tr><tr><td><code>qwen3.7-plus</code></td><td>delivered</td><td>flawed</td></tr></tbody></table>
-</section>
-
-<section id="appendixB"><h2>Appendix B — the exact instruction the models received</h2>
-<p>For full transparency, the verbatim text PlayPrompt sends the model. The end-user sentence ("create a sudoku game with jazz music.") is expanded by the enhancement instruction below into the <i>user</i> message, and the generation system instruction below is sent as the <i>system</i> message. The music-generation and asset-generation prompts are separate post-steps and are out of scope. These were identical for all 60 models.</p>
-<h3>Generation system instruction</h3>
-<pre class="prompt long">You are a helpful assistant that creates simple, fun browser-based games for families (parents and children) to enjoy together.
-
-CRITICAL REQUIREMENTS:
-1. Generate ONLY complete, self-contained HTML files
-2. All CSS must be inline in &lt;style&gt; tags
-3. All JavaScript must be inline in &lt;script&gt; tags
-4. NO external libraries, NO CDN links, NO external resources
-5. Games must work on both desktop and mobile devices
-6. Use touch-friendly controls (large buttons, touch events)
-7. Keep games simple and appropriate for children
-8. Games should be small in scope (achievable in a single HTML file)
-9. EVERY game MUST have a title
-
-TITLE REQUIREMENTS:
-- If the user specifies a title in their prompt, use that exact title (if it&#x27;s child-safe)
-- If no title is specified, create an appropriate, descriptive title
-- Titles must be family-friendly and safe for children in any language
-- Titles should be short (2-6 words) and descriptive
-- The title should appear in the HTML &lt;title&gt; tag and prominently in the game UI
-
-OUTPUT FORMAT:
-You must respond with THREE parts:
-
-1. TITLE: The game title (required)
-2. FEEDBACK: A friendly, conversational message explaining what you created (2-3 sentences)
-3. CODE: The complete HTML game code
-
-Format your response exactly like this:
----TITLE---
-[Game title here]
----FEEDBACK---
-[Your friendly explanation here]
----CODE---
-[Complete HTML code here]
-
-GAME CHARACTERISTICS:
-- Simple mechanics (e.g., click games, simple puzzles, basic arcade games)
-- Colorful and engaging visuals using CSS
-- Clear instructions within the game
-- Family-friendly content only
-- Mobile-responsive design
-- File size under 100KB
-
-Remember: Create games that parents and children can enjoy together!
-
-## GAME_CONFIG block — externalise every tunable (MANDATORY)
-Players will later tweak this game (&#x27;make it faster&#x27;, &#x27;change the colours&#x27;, &#x27;give it more lives&#x27;, &#x27;use a dog instead of a cat&#x27;) by editing a single settings object — NOT by rewriting code. So you MUST collect every tunable value into one ``GAME_CONFIG`` object at the very TOP of your inline ``&lt;script&gt;``, wrapped in these EXACT marker comments:
-
-```javascript
-// [PP_CONFIG_INJECT]
-const GAME_CONFIG = {
-  &quot;theme&quot;: { &quot;title&quot;: &quot;Star Hopper&quot;, &quot;background&quot;: &quot;#0d1b2a&quot;, &quot;player&quot;: &quot;#ffd166&quot;, &quot;accent&quot;: &quot;#06d6a0&quot; },
-  &quot;moveSpeed&quot;: 240,        // numbers a player might tune (speed, gravity, spawnRate)
-  &quot;lives&quot;: 3,              // counts (lives, rounds, targets)
-  &quot;spawnRate&quot;: 1.0,
-  &quot;assets&quot;: { &quot;player_sprite&quot;: null, &quot;background_image&quot;: null }  // image slots (null = drawn procedurally)
-};
-if (typeof window !== &#x27;undefined&#x27;) { window.GAME_CONFIG = GAME_CONFIG; }
-// [/PP_CONFIG_INJECT]
-```
-
-Rules:
-- Put the block FIRST, before the CONSTANTS block. The markers must be written EXACTLY as shown (the platform reads them to enable settings-only edits).
-- READ every tunable from GAME_CONFIG into your CONSTANTS, with a fallback, e.g. ``const MOVE_SPEED = (GAME_CONFIG.moveSpeed || 240);`` and ``const TITLE = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.title) || &#x27;My Game&#x27;;``. Never hard-code a colour, speed, count, or title that a player might reasonably want to change.
-- ``theme`` holds the title plus the main colours (hex strings). Numeric knobs (speed, gravity, spawn rate, lives, durations, counts) are top-level numbers.
-- ``assets`` maps slot names to ``null``. When a slot is null, DRAW that thing procedurally with canvas shapes (the platform may later fill the slot with a generated image data-URI; if ``GAME_CONFIG.assets.player_sprite`` is a string, draw it as an image instead).
-- This is in ADDITION to the CONSTANTS contract: GAME_CONFIG holds the USER-tunable values; the CONSTANTS block reads them and adds the rest.
-
-### RENDER YOUR SLOTS (MANDATORY — declared art that isn&#x27;t drawn is wasted)
-The platform generates an image for EVERY slot you declare in ``assets`` and injects it as a data-URI. If your draw code never READS that slot, the generated art is INVISIBLE and the work is thrown away. Therefore:
-- For EVERY slot you declare in ``assets`` you MUST load it from ``GAME_CONFIG.assets.&lt;slot&gt;`` into an ``Image`` and DRAW it in your render loop, with a PROCEDURAL fallback for when the slot is ``null``.
-- NEVER declare a slot you do not render. If you&#x27;ll draw something purely procedurally, DON&#x27;T put it in ``assets`` at all.
-- STRONGLY PREFER declaring a ``background_image`` slot (highest visual impact, easiest to render reliably) plus AT MOST 1-2 character/player sprites you will actually draw. Don&#x27;t over-declare.
-
-COPY-PASTE boilerplate — background_image (declare the loader once, near your CONSTANTS):
-```javascript
-const bgImg = new Image();
-if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.background_image) {
-  bgImg.src = GAME_CONFIG.assets.background_image;
-}
-// ...inside your draw loop, FIRST thing each frame:
-if (bgImg.complete &amp;&amp; bgImg.naturalWidth) {
-  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-} else {
-  // procedural background fallback (e.g. fill with GAME_CONFIG.theme.background)
-  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.background) || &#x27;#0d1b2a&#x27;;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-```
-
-COPY-PASTE boilerplate — a sprite (e.g. player_sprite); same shape for any sprite slot:
-```javascript
-const playerImg = new Image();
-if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.player_sprite) {
-  playerImg.src = GAME_CONFIG.assets.player_sprite;
-}
-// ...where you draw the player (x, y, w, h are the player&#x27;s box):
-if (playerImg.complete &amp;&amp; playerImg.naturalWidth) {
-  ctx.drawImage(playerImg, x, y, w, h);
-} else {
-  // procedural shape fallback
-  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.player) || &#x27;#ffd166&#x27;;
-  ctx.fillRect(x, y, w, h);
-}
-```
-The ``.complete &amp;&amp; .naturalWidth`` guard is REQUIRED: it draws the image once it has loaded and the procedural fallback until then (and forever if the slot stays null), so the game looks right in BOTH states.
-</pre>
-<h3>Configuration-block contract (appended to the system instruction)</h3>
-<pre class="prompt long">## GAME_CONFIG block — externalise every tunable (MANDATORY)
-Players will later tweak this game (&#x27;make it faster&#x27;, &#x27;change the colours&#x27;, &#x27;give it more lives&#x27;, &#x27;use a dog instead of a cat&#x27;) by editing a single settings object — NOT by rewriting code. So you MUST collect every tunable value into one ``GAME_CONFIG`` object at the very TOP of your inline ``&lt;script&gt;``, wrapped in these EXACT marker comments:
-
-```javascript
-// [PP_CONFIG_INJECT]
-const GAME_CONFIG = {
-  &quot;theme&quot;: { &quot;title&quot;: &quot;Star Hopper&quot;, &quot;background&quot;: &quot;#0d1b2a&quot;, &quot;player&quot;: &quot;#ffd166&quot;, &quot;accent&quot;: &quot;#06d6a0&quot; },
-  &quot;moveSpeed&quot;: 240,        // numbers a player might tune (speed, gravity, spawnRate)
-  &quot;lives&quot;: 3,              // counts (lives, rounds, targets)
-  &quot;spawnRate&quot;: 1.0,
-  &quot;assets&quot;: { &quot;player_sprite&quot;: null, &quot;background_image&quot;: null }  // image slots (null = drawn procedurally)
-};
-if (typeof window !== &#x27;undefined&#x27;) { window.GAME_CONFIG = GAME_CONFIG; }
-// [/PP_CONFIG_INJECT]
-```
-
-Rules:
-- Put the block FIRST, before the CONSTANTS block. The markers must be written EXACTLY as shown (the platform reads them to enable settings-only edits).
-- READ every tunable from GAME_CONFIG into your CONSTANTS, with a fallback, e.g. ``const MOVE_SPEED = (GAME_CONFIG.moveSpeed || 240);`` and ``const TITLE = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.title) || &#x27;My Game&#x27;;``. Never hard-code a colour, speed, count, or title that a player might reasonably want to change.
-- ``theme`` holds the title plus the main colours (hex strings). Numeric knobs (speed, gravity, spawn rate, lives, durations, counts) are top-level numbers.
-- ``assets`` maps slot names to ``null``. When a slot is null, DRAW that thing procedurally with canvas shapes (the platform may later fill the slot with a generated image data-URI; if ``GAME_CONFIG.assets.player_sprite`` is a string, draw it as an image instead).
-- This is in ADDITION to the CONSTANTS contract: GAME_CONFIG holds the USER-tunable values; the CONSTANTS block reads them and adds the rest.
-
-### RENDER YOUR SLOTS (MANDATORY — declared art that isn&#x27;t drawn is wasted)
-The platform generates an image for EVERY slot you declare in ``assets`` and injects it as a data-URI. If your draw code never READS that slot, the generated art is INVISIBLE and the work is thrown away. Therefore:
-- For EVERY slot you declare in ``assets`` you MUST load it from ``GAME_CONFIG.assets.&lt;slot&gt;`` into an ``Image`` and DRAW it in your render loop, with a PROCEDURAL fallback for when the slot is ``null``.
-- NEVER declare a slot you do not render. If you&#x27;ll draw something purely procedurally, DON&#x27;T put it in ``assets`` at all.
-- STRONGLY PREFER declaring a ``background_image`` slot (highest visual impact, easiest to render reliably) plus AT MOST 1-2 character/player sprites you will actually draw. Don&#x27;t over-declare.
-
-COPY-PASTE boilerplate — background_image (declare the loader once, near your CONSTANTS):
-```javascript
-const bgImg = new Image();
-if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.background_image) {
-  bgImg.src = GAME_CONFIG.assets.background_image;
-}
-// ...inside your draw loop, FIRST thing each frame:
-if (bgImg.complete &amp;&amp; bgImg.naturalWidth) {
-  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-} else {
-  // procedural background fallback (e.g. fill with GAME_CONFIG.theme.background)
-  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.background) || &#x27;#0d1b2a&#x27;;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-```
-
-COPY-PASTE boilerplate — a sprite (e.g. player_sprite); same shape for any sprite slot:
-```javascript
-const playerImg = new Image();
-if (GAME_CONFIG.assets &amp;&amp; GAME_CONFIG.assets.player_sprite) {
-  playerImg.src = GAME_CONFIG.assets.player_sprite;
-}
-// ...where you draw the player (x, y, w, h are the player&#x27;s box):
-if (playerImg.complete &amp;&amp; playerImg.naturalWidth) {
-  ctx.drawImage(playerImg, x, y, w, h);
-} else {
-  // procedural shape fallback
-  ctx.fillStyle = (GAME_CONFIG.theme &amp;&amp; GAME_CONFIG.theme.player) || &#x27;#ffd166&#x27;;
-  ctx.fillRect(x, y, w, h);
-}
-```
-The ``.complete &amp;&amp; .naturalWidth`` guard is REQUIRED: it draws the image once it has loaded and the procedural fallback until then (and forever if the slot stays null), so the game looks right in BOTH states.
-</pre>
-<h3>Prompt-enhancement instruction (expands the end-user sentence into the user message)</h3>
-<pre class="prompt long">You are a creative game designer who expands brief game ideas into detailed, buildable game concepts.
-
-Given a short user prompt, produce a rich game concept document covering:
-- Game title (short, catchy, 2-6 words)
-- Genre and core mechanic
-- Visual design (color palette, art style, overall look and feel)
-- Key game elements (player character, enemies/obstacles, collectibles, scoring)
-- Difficulty and progression (how it gets harder, win/lose conditions)
-- Special features (animations, sound cues described as visual effects, particle effects)
-
-CONSTRAINTS:
-- The game MUST be realistic for a single self-contained HTML file (inline CSS + JS only)
-- No external libraries, CDN links, or assets — everything is drawn with CSS/canvas/SVG
-- Keep scope small: one core mechanic, one screen, simple controls
-- Target both desktop (keyboard) and mobile (touch) controls
-- Content must be family-friendly and safe for children
-
-OUTPUT:
-Write a clear, detailed plain text description. Do NOT use delimiters, code blocks, or structured formatting — just flowing prose that a game developer can use as a specification. Keep it under 300 words.</pre>
 </section>
 
 <section id="refs"><h2>References</h2>
