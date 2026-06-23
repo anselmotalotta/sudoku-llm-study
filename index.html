@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Generating Sudoku with 60 Language Models — One Prompt, Machine-Tested, Every Game Published</title>
+<title>Generating Sudoku with 72 Language Models — One Prompt, Machine-Tested, Every Game Published</title>
 <meta name="description" content="An independent, reproducible generation study: 72 LLMs across 10 vendors, one identical prompt, each Sudoku game rendered, validated, played to a win, and published. Full methodology, data, prompt, and limitations.">
 <link rel="stylesheet" href="style.css">
 </head><body>
 <header class="hero"><div class="wrap">
 <p class="kicker">Independent generation study · v1.0 · run date 2026-06-23</p>
-<h1>Generating Sudoku with 60 language models</h1>
+<h1>Generating Sudoku with 72 language models</h1>
 <p class="sub">One identical prompt, sent to 72 models across 10 vendors. Every generated game was rendered, validated, played to a win in a real browser, and published here. This is a relative, point-in-time comparison on a single task — read the methodology and limitations before quoting a number.</p>
 <div class="badges">
 <span class="badge"><b>72</b> models</span><span class="badge"><b>10</b> vendors</span>
@@ -55,7 +55,7 @@
 <h3>Models</h3>
 <p>Seventy-two current text models across ten vendors — Anthropic, OpenAI, Google, xAI, DeepSeek, Mistral, MiniMax, Alibaba (Qwen), Zhipu (GLM), and Moonshot (Kimi) — were enumerated in advance; the full roster with exact model IDs and per-model outcomes is in <a href="#appendixA">Appendix&nbsp;A</a>. The model list, the prompt, the rubric, and the "best-by" definitions were fixed before the run.</p>
 <h3>Generation</h3>
-<p>Each model was driven through PlayPrompt's generation path via a per-request model override, so all 60 faced identical conditions — same prompt, same enhancement step, same system instruction, same packaging. The only variable was the text model that wrote the game. Models were run with default sampling settings; one attempt per model. Generation time and token usage were recorded per model.</p>
+<p>Each model was driven through PlayPrompt's generation path via a per-request model override, so all 72 faced identical conditions — same prompt, same enhancement step, same system instruction, same packaging. The only variable was the text model that wrote the game. Models were run with default sampling settings; one attempt per model. Generation time and token usage were recorded per model.</p>
 <h3>Scoring rubric (pre-stated)</h3>
 <p>Each delivered game was assigned exactly one verdict against definitions fixed before grading:</p>
 <table><thead><tr><th>Verdict</th><th>Definition</th></tr></thead><tbody>
@@ -157,7 +157,7 @@
 <p>Everything needed to re-run or re-score this study is published here:</p>
 <ul class="tight">
 <li>The verbatim end-user prompt (above). The fixed system instruction is described in <a href="#prompt">The prompt</a> and is available to model vendors on request.</li>
-<li>Every generated game, playable: <a href="games/">/games/</a> (30 self-contained HTML files).</li>
+<li>Every generated game, playable: <a href="games/">/games/</a> (40 self-contained HTML files).</li>
 <li>Every screenshot: <a href="assets/">/assets/</a>.</li>
 <li>The per-model results as data: <a href="data/results.csv">results.csv</a> · <a href="data/results.json">results.json</a>.</li>
 <li>This entire report as a single file: <a href="sudoku-llm-study-2026-06-23.pdf">PDF download</a>.</li>
@@ -194,5 +194,5 @@
 </section>
 
 </main>
-<footer class="wrap"><p>Independent generation study · v1.0 · run date 2026-06-23 · 51 games generated, 30 published as playable · produced by <a href="https://playprompt.org" target="_blank" rel="noopener">PlayPrompt</a>.</p></footer>
+<footer class="wrap"><p>Independent generation study · v1.0 · run date 2026-06-23 · 51 games generated, 40 published as playable · produced by <a href="https://playprompt.org" target="_blank" rel="noopener">PlayPrompt</a>.</p></footer>
 </body></html>
