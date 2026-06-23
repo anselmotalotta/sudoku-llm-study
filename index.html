@@ -16,10 +16,10 @@
 </div></header>
 
 <nav class="toc"><div class="wrap">
-<a href="#disclosure">Disclosure</a><a href="#abstract">Abstract</a><a href="#prompt">The prompt</a>
+<a href="#disclosure">Disclosure</a><a href="#abstract">Abstract</a><a href="#motivation">Motivation</a><a href="#prompt">The prompt</a>
 <a href="#method">Methodology</a><a href="#results">Results</a><a href="#games">Games</a>
 <a href="#vendors">By vendor</a><a href="#discussion">Discussion</a><a href="#threats">Threats to validity</a>
-<a href="#repro">Reproducibility</a><a href="#appendixA">Roster</a><a href="#refs">References</a>
+<a href="#future">Future work</a><a href="#repro">Reproducibility</a><a href="#appendixA">Roster</a><a href="#refs">References</a>
 </div></nav>
 
 <main class="wrap">
@@ -27,10 +27,21 @@
 <section id="disclosure" class="callout-box"><h2>Disclosure</h2>
 <p>This study is produced by <b>PlayPrompt</b>, a beta platform that generates browser games from natural-language prompts using third-party models. We state that up front. PlayPrompt has <b>no model of its own</b> in this comparison and <b>no fixed default</b> — we run studies like this to decide which models to offer, so our incentive is an accurate result, not promoting any one model.</p>
 <p>To keep the comparison verifiable, every model received the same prompt under identical conditions and <b>every generated game is published here</b> to play and re-score. Our fairness practices follow the literature on benchmark conflicts of interest (see <a href="#refs">References</a>).</p>
+<p class="muted">The study was run and graded with the help of <b>Claude Code</b>, an Anthropic agent. Logic and playability verdicts are decided by execution — a solver and each game's own win signal — but the visual pass was made by a Claude-based reviewer and was not blinded. That is a second conflict of interest (an Anthropic model helping grade games, including games written by Anthropic models), so every screenshot is published for independent re-grading; see <a href="#threats">Threats to Validity</a>.</p>
 </section>
 
 <section id="abstract"><h2>Abstract</h2>
 <p class="lead">We measured whether current language models can turn one natural-language prompt into a complete, correct, playable browser game. Sudoku was the probe because correctness is machine-verifiable. Sixty models from eight vendors received the same prompt; each output was scored on a frozen rubric: did it <b>deliver</b>, encode a <b>valid puzzle that can be driven to a recognized win</b>, and <b>visually render a usable board</b>. Of 60 models, <b>41</b> delivered a working game and <b>23</b> produced a board that was both logically correct and cleanly rendered; 1 produced a valid but reduced (4×4) variant, and the remainder were flawed, broken, or not Sudoku. The strongest result is methodological: logic-only checking produces false positives — at least one model computed a correct solution while rendering no grid at all — so both execution-based and pixel-level verification are required. We publish every generated game, every screenshot, the end-user prompt, and the per-model data. Findings are relative and conditional on this prompt, these model snapshots, and this date.</p>
+</section>
+
+<section id="motivation"><h2>Motivation</h2>
+<p>PlayPrompt generates games with AI, so we have a direct, practical interest in where current models succeed and fail at turning a prompt into working software. This study is one probe in that effort, and we chose Sudoku deliberately:</p>
+<ul class="tight">
+<li><b>Well known, and almost certainly in training data.</b> That makes it a test of <i>generation and rendering</i> rather than novel reasoning. We treat the training-data overlap as a scope limit, not an advantage (see <a href="#threats">Threats to Validity</a>).</li>
+<li><b>Simple in the right way.</b> A static logic puzzle has no real-time action, physics, or moving parts, so it isolates correctness, layout, and a single clear win condition — not animation or game-feel.</li>
+<li><b>Automatically verifiable.</b> A Sudoku is either a valid grid with a solvable puzzle and a detectable win, or it is not — which lets us grade by execution rather than by opinion.</li>
+</ul>
+<p>It is the first in a planned series; later probes will add what Sudoku deliberately leaves out — real-time action, physics, and multi-step state.</p>
 </section>
 
 <section id="prompt"><h2>The prompt</h2>
@@ -53,13 +64,10 @@
 <tr><td><span class="tag t-broken">broken</span></td><td>No usable board renders, or the game is not Sudoku.</td></tr>
 </tbody></table>
 <p class="muted"><b>Solution uniqueness</b> was not part of the clean bar (a proper Sudoku has exactly one solution; our bar was a valid, winnable board). Where uniqueness was measured and failed, the game is kept as clean but flagged ⚠ — see Threats to Validity.</p>
-<h3>Two-stage QA harness</h3>
-<p>Every delivered game was tested in a real headless browser (Chromium via Playwright):</p>
-<ul class="tight">
-<li><b>Stage 1 — execution.</b> Load the game, extract the puzzle and its intended solution, verify validity programmatically, then drive the full correct solution through the game's own controls and confirm it registers a win.</li>
-<li><b>Stage 2 — pixels.</b> Screenshot the started game and inspect the rendering for a real grid, visible box divisions, printed givens, and a non-garbled layout.</li>
-</ul>
-<p>Stage 2 exists because Stage 1 is not sufficient. One model (<code>grok-4.3</code>) passed every execution check — valid solver, correct win logic — yet rendered no grid at all. A logic-only study would have scored it as passing. The screenshot is what caught it. Narrating that failure mode is the point: generated software has to be observed, not just trusted.</p>
+<h3>How games were evaluated — tools and routines</h3>
+<p>The whole pipeline — issuing the generation requests, running the test harness, reviewing the screenshots, aggregating the data, and drafting this report — was orchestrated with <b>Claude Code</b>, Anthropic's agentic coding tool. Games were tested in a real headless browser: <b>Chromium driven by Playwright</b> (Node), at a fixed 1000×1150 viewport, after waiting for fonts to load and nudging the viewport to trigger any canvas sizing.</p>
+<p><b>Stage 1 — execution / logic.</b> For each game the harness loads the page, starts it (clicking a difficulty or Start control, or the canvas), and reads the puzzle: for DOM-rendered boards it extracts the digit in every cell by walking the rendered elements and clustering them into the N×N grid; for canvas-rendered boards it reads the puzzle from the game's in-page JavaScript state. A backtracking solver checks that the givens form a valid Sudoku (no repeated digit in any row, column, or 3×3 box) and that a solution exists, then drives that full solution into the board through the game's own controls — selecting each empty cell and entering its digit — and records whether the game's own code signals a win. A game that cannot be solved, or never registers the win, fails this stage.</p>
+<p><b>Stage 2 — pixels / visual.</b> The harness screenshots each started game; the images were reviewed (by a vision-capable agent and by the author) against four criteria: a real grid is present, the 3×3 boxes are visibly divided, the given numbers are printed, and the layout is not garbled. Stage 2 exists because Stage 1 is not sufficient: one model (<code>grok-4.3</code>) passed every execution check — valid solver, correct win logic — yet rendered no grid at all. Only the screenshot caught it. Generated software has to be observed, not just trusted.</p>
 <h3>Cost and features</h3>
 <p>Estimated text-generation cost = recorded token usage × each vendor's published list price (asset costs excluded, to isolate the text model). Prices were read from each vendor's public pricing page on 2026-06-23; a small number (Alibaba/Qwen) are estimates and are flagged as such. Feature counts are the number of distinct interactive elements catalogued per game and are approximate.</p>
 <details class="glossary"><summary>Glossary</summary>
@@ -134,8 +142,14 @@
 <p>Sudoku only; these specific model snapshots; this date. Hosted model endpoints drift over time, so exact numbers are not guaranteed to reproduce.</p>
 <h3>Conclusion</h3>
 <p>Small N, single run, no statistical significance testing or confidence intervals. Feature counts are approximate; some costs are estimates. We avoid significance claims.</p>
+<h3>Grader independence</h3>
+<p>Logic and playability verdicts are execution-based — a deterministic solver and each game's own win signal decide them, not a model's opinion. The Stage-2 visual judgments, however, were made by a Claude-based agent (and the author) and were <b>not blinded</b> to which model produced each screenshot; since some contestants are Anthropic models, this is a conflict of interest. The visual check is a coarse "does a usable grid render" pass that is hard to skew, and all screenshots are published so the visual grades can be independently — and blindly — re-checked.</p>
 <h3>Contamination</h3>
 <p>Sudoku is heavily represented in training data. This study measures generation and rendering of a familiar artifact under one framing, not novel reasoning, and small prompt changes can flip outcomes.</p>
+</section>
+
+<section id="future"><h2>Future work</h2>
+<p>Run each model several times to separate a real difference from run-to-run noise; blind the visual grading; and extend beyond Sudoku to games that need real-time action, physics, and multi-step state — the dimensions this probe deliberately omits.</p>
 </section>
 
 <section id="repro"><h2>Reproducibility &amp; artifacts</h2>
